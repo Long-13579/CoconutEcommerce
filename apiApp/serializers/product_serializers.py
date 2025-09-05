@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from models import Product, ProductRating, Review
-from ecom_BE.apiApp.serializers.user_serializers import UserSerializer
+from ..models import Product
+from .user_serializers import UserSerializer
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -8,24 +8,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = Product
         fields = ["id", "name", "slug", "image", "price"]
 
-
-class ReviewSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-
-    class Meta:
-        model = Review
-        fields = ["id", "user", "rating", "review", "created", "updated"]
-
-
-class ProductRatingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProductRating
-        fields = ["id", "average_rating", "total_reviews"]
-
-
 class ProductDetailSerializer(serializers.ModelSerializer):
-    reviews = ReviewSerializer(read_only=True, many=True)
-    rating = ProductRatingSerializer(read_only=True)
     poor_review = serializers.SerializerMethodField()
     fair_review = serializers.SerializerMethodField()
     good_review = serializers.SerializerMethodField()
