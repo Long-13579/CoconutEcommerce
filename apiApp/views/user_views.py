@@ -51,3 +51,9 @@ def get_address(request):
         serializer = CustomerAddressSerializer(address)
         return Response(serializer.data)
     return Response({"error": "Address not found"}, status=200)
+
+@api_view(["GET"])
+def user_list(request):
+    users = User.objects.all()
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)

@@ -4,9 +4,14 @@ from .product_serializers import ProductListSerializer
 
 
 class CategoryListSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = Category
         fields = ["id", "name", "image", "slug"]
+
+    def get_image(self, obj):
+        return obj.image.url if obj.image else "https://vetra.laborasyon.com/assets/images/products/1.jpg"
 
 
 class CategoryDetailSerializer(serializers.ModelSerializer):

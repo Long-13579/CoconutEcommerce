@@ -70,3 +70,10 @@ def product_in_cart(request):
     exists = CartItem.objects.filter(cart=cart, product=product).exists()
 
     return Response({'product_in_cart': exists})
+
+
+@api_view(["GET"])
+def cart_list(request):
+    carts = Cart.objects.all()
+    serializer = CartStatSerializer(carts, many=True)
+    return Response(serializer.data)
