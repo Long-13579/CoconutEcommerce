@@ -1,3 +1,4 @@
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from ..models import Category
@@ -15,4 +16,10 @@ def category_list(request):
 def category_detail(request, slug):
     category = Category.objects.get(slug=slug)
     serializer = CategoryDetailSerializer(category)
+    return Response(serializer.data)
+
+@api_view(["GET"])
+def user_list(request):
+    users = User.objects.all()
+    serializer = UserSerializer(users, many=True)
     return Response(serializer.data)

@@ -28,14 +28,38 @@ class CartSerializer(serializers.ModelSerializer):
 
 
 class CartStatSerializer(serializers.ModelSerializer):
-    total_quantity = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    name = serializers.SerializerMethodField()
+    amount = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    date = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ["id", "cart_code", "total_quantity"]
+        fields = ["id", "cart_code", "avatar", "name", "amount", "status", "date"]
 
-    def get_total_quantity(self, cart):
-        return sum([item.quantity for item in cart.cartitems.all()])
+    def get_avatar(self, cart):
+        # Trả về avatar mặc định hoặc từ user
+        return "https://i.pravatar.cc/300"
+
+    def get_name(self, cart):
+        # Trả về tên khách hàng hoặc mã cart
+        first_item = cart.cartitems.first()
+        if first_item and hasattr(first_item.product, 'name'):
+            return first_item.product.name
+        return cart.cart_code
+
+    def get_amount(self, cart):
+        # Tổng tiền của cart
+        return sum([item.quantity * item.product.price for item in cart.cartitems.all()])
+
+    def get_status(self, cart):
+        # Trả về trạng thái mẫu (có thể sửa logic theo thực tế)
+        return "Completed"
+
+    def get_date(self, cart):
+        # Trả về ngày tạo cart
+        return cart.created_at.strftime("%a %b %d %Y %H:%M:%S GMT%z (%Z)")
 
 
 class SimpleCartSerializer(serializers.ModelSerializer):
