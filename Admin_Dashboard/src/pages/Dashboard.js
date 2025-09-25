@@ -102,10 +102,7 @@ function Dashboard() {
       {/* <!-- Recent Orders --> */}
       <PageTitle>Orders</PageTitle>
       <OrdersTable resultsPerPage={10} />
-      {/* Role Management UI cho admin */}
-      <div className="mt-12">
-        <RoleManagement />
-      </div>
+      {/* Role Management UI đã bị xoá khỏi dashboard theo yêu cầu */}
     </>
   );
 }
