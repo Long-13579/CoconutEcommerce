@@ -44,20 +44,18 @@ const Chats = () => {
         </div>
         <div className="">
           <SectionTitle>Contacts</SectionTitle>
-          {response.map((user, id) => {
-            if (user.messages !== null) {
-              return (
-                <ChatUserCard
-                  key={id}
-                  avatar={user.avatar}
-                  first_name={user.first_name}
-                  last_name={user.last_name}
-                  state={user.state}
-                  handleClick={() => handleSelect(user)}
-                />
-              );
-            }
-          })}
+          {response.map((user, id) =>
+            user.messages !== null ? (
+              <ChatUserCard
+                key={id}
+                avatar={user.avatar}
+                first_name={user.first_name}
+                last_name={user.last_name}
+                state={user.state}
+                handleClick={() => handleSelect(user)}
+              />
+            ) : null
+          )}
         </div>
       </div>
     </div>

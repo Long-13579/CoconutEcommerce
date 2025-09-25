@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import PageTitle from "../components/Typography/PageTitle";
-import RoleManagement from "./RoleManagement";
 import InfoCard from "../components/Cards/InfoCard";
 import RoundIcon from "../components/RoundIcon";
 import { PeopleIcon, MoneyIcon, CartIcon, ChatIcon } from "../icons";

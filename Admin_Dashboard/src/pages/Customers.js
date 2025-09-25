@@ -12,6 +12,7 @@ import {
 import UsersTable from "../components/UsersTable";
 
 const Customers = () => {
+  // Only show users with is_staff_account === false
   return (
     <div>
       <PageTitle>Manage Customers</PageTitle>
@@ -28,7 +29,7 @@ const Customers = () => {
         </ChartCard>
       </div>
 
-      <UsersTable resultsPerPage={10} />
+      <UsersTable resultsPerPage={10} staffMode={false} />
     </div>
   );
 };

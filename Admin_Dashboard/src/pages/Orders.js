@@ -16,17 +16,16 @@ const Orders = () => {
   const [filter, setFilter] = useState("all");
 
   const handleFilter = (filter_name) => {
-    // console.log(filter_name);
-    if (filter_name == "All") {
+    if (filter_name === "All") {
       setFilter("all");
     }
-    if (filter_name == "Un-Paid Orders") {
+    if (filter_name === "Un-Paid Orders") {
       setFilter("un-paid");
     }
-    if (filter_name == "Paid Orders") {
+    if (filter_name === "Paid Orders") {
       setFilter("paid");
     }
-    if (filter_name == "Completed") {
+    if (filter_name === "Completed") {
       setFilter("completed");
     }
   };
@@ -43,7 +42,7 @@ const Orders = () => {
             Dashboard
           </NavLink>
         </div>
-        {">"}
+        <span className="mx-2">&gt;</span>
         <p className="mx-2">Orders</p>
       </div>
 
