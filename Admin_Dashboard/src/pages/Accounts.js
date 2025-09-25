@@ -1,35 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PageTitle from "../components/Typography/PageTitle";
 
-const ROLES = [
-    { value: "admin", label: "Admin" },
-    { value: "inventory", label: "Inventory / Product Staff" },
-    { value: "sales", label: "Sales Manager" },
-    { value: "support", label: "Customer Support Staff" },
-    { value: "delivery", label: "Delivery Staff" },
-    { value: "analytics", label: "Analytics Staff" },
-];
-
-const MOCK_USERS = [
-    {
-        id: 1,
-        avatar: "https://i.pravatar.cc/40?img=1",
-        fullName: "Nguyen Van A",
-        email: "a@email.com",
-        role: "admin",
-        status: "Active",
-        createdAt: "2025-09-01",
-    },
-    {
-        id: 2,
-        avatar: "https://i.pravatar.cc/40?img=2",
-        fullName: "Tran Thi B",
-        email: "b@email.com",
-        role: "sales",
-        status: "Inactive",
-        createdAt: "2025-09-10",
-    },
-];
+// API endpoint URL
+const API_URL = "http://localhost:8000/api/users/users/?staff_only=true";
+const ROLES_API_URL = "http://localhost:8000/api/roles/roles/";
 
 function AccountForm({ roles, onSave, onCancel }) {
     const [form, setForm] = useState({
@@ -79,7 +53,45 @@ function AccountForm({ roles, onSave, onCancel }) {
 }
 
 function Accounts() {
-    const [users, setUsers] = useState(MOCK_USERS);
+    const [users, setUsers] = useState([]);
+    const [roles, setRoles] = useState([]);
+    // Fetch user list and role list from backend
+    useEffect(() => {
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                // Chỉ nhận staff account từ API (staff_only=true)
+                setUsers(Array.isArray(data) ? data.map(u => ({
+                    id: u.id,
+                    avatar: u.profile_picture_url || `https://i.pravatar.cc/40?u=${u.email}`,
+                    fullName: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || u.email,
+                    email: u.email,
+                    role: u.role || "", // role is id
+                    role_name: u.role_name || "", // get role name from backend if available
+                    status: u.is_active ? "Active" : "Inactive",
+                    createdAt: u.joined_on || u.date_joined || "",
+                })) : []);
+            })
+            .catch((err) => {
+                console.error("Error fetching staff accounts:", err);
+                setUsers([]);
+            });
+        fetch(ROLES_API_URL)
+            .then(res => res.json())
+            .then(data => {
+                // data: [{id, name, description, permissions}]
+                setRoles(Array.isArray(data) ? data.map(r => ({
+                    id: r.id, // <-- add this for correct role mapping
+                    value: r.name,
+                    label: r.description || r.name,
+                    permissions: r.permissions || [],
+                })) : []);
+            })
+            .catch((err) => {
+                console.error("Error fetching roles:", err);
+                setRoles([]);
+            });
+    }, []);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("");
     const [showForm, setShowForm] = useState(false);
@@ -96,18 +108,63 @@ function Accounts() {
 
     const filteredUsers = users.filter(u =>
         (u.fullName.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())) &&
-        (filter ? u.role === filter : true)
+        (filter ? u.role === filter || u.role_name === filter : true)
     );
 
-    const handleCreate = data => {
-        setUsers([...users, {
-            ...data,
-            id: Date.now(),
-            avatar: `https://i.pravatar.cc/40?u=${data.email}`,
-            status: "Active",
-            createdAt: new Date().toISOString().slice(0, 10),
-        }]);
-        setShowForm(false);
+    const handleCreate = async data => {
+        // Tìm role id từ danh sách roles
+        const selectedRole = roles.find(r => r.value === data.role);
+        const roleId = selectedRole ? selectedRole.id : null;
+        try {
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: data.username,
+                    email: data.email,
+                    first_name: data.fullName.split(" ")[0] || data.fullName,
+                    last_name: data.fullName.split(" ").slice(1).join(" "),
+                    profile_picture_url: `https://i.pravatar.cc/40?u=${data.email}`,
+                    role: roleId,
+                    password: data.password,
+                    is_staff_account: true, // Mark as staff account
+                    // Thêm các trường khác nếu backend yêu cầu
+                })
+            });
+            if (res.ok) {
+                // Sau khi tạo thành công, fetch lại danh sách user
+                fetch(API_URL)
+                    .then(res => res.json())
+                    .then(data => {
+                        // Chỉ nhận staff account từ API (staff_only=true)
+                        setUsers(Array.isArray(data) ? data.map(u => ({
+                            id: u.id,
+                            avatar: u.profile_picture_url || `https://i.pravatar.cc/40?u=${u.email}`,
+                            fullName: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || u.email,
+                            email: u.email,
+                            role: u.role || "",
+                            status: u.is_active ? "Active" : "Inactive",
+                            createdAt: u.joined_on || u.date_joined || "",
+                        })) : []);
+                    });
+                setShowForm(false);
+            } else {
+                const errorData = await res.json();
+                let msg = "";
+                if (errorData.email && errorData.email[0].includes("already exists")) {
+                    msg += "Email đã tồn tại. ";
+                }
+                if (errorData.username && errorData.username[0].includes("already exists")) {
+                    msg += "Username đã tồn tại. ";
+                }
+                if (!msg) {
+                    msg = "Lỗi tạo tài khoản: " + JSON.stringify(errorData);
+                }
+                alert(msg);
+            }
+        } catch (err) {
+            alert("Network or server error: " + err.message);
+        }
     };
 
     const handleDelete = id => {
@@ -144,7 +201,7 @@ function Accounts() {
                                 onChange={e => setFilter(e.target.value)}
                             >
                                 <option value="">All Roles</option>
-                                {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                                {roles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
                             </select>
                         </div>
                         <div className="flex gap-4">
@@ -171,27 +228,36 @@ function Accounts() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredUsers.map(u => (
-                                    <tr key={u.id}>
-                                        <td className="p-2 w-10"><input type="checkbox" checked={selected.includes(u.id)} onChange={e => setSelected(e.target.checked ? [...selected, u.id] : selected.filter(id => id !== u.id))} /></td>
-                                        <td className="p-2 w-16 text-left"><img src={u.avatar} alt="avatar" className="rounded-full w-8 h-8" /></td>
-                                        <td className="p-2 w-40 text-left">{u.fullName}</td>
-                                        <td className="p-2 w-56 text-left">{u.email}</td>
-                                        <td className="p-2 w-32 text-left">{ROLES.find(r => r.value === u.role)?.label || u.role}</td>
-                                        <td className="p-2 w-24 text-left">{u.status}</td>
-                                        <td className="p-2 w-32 text-left">{u.createdAt}</td>
-                                        <td className="p-2 w-32 text-left">
-                                            <button className="mr-2 text-blue-600" onClick={() => handleEdit(u)}>Edit</button>
-                                            <button className="text-red-600" onClick={() => handleDelete(u.id)}>Delete</button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {filteredUsers.map(u => {
+                                    const roleObj = roles.find(r => r.id === u.role);
+                                    return (
+                                        <tr key={u.id}>
+                                            <td className="p-2 w-10"><input type="checkbox" checked={selected.includes(u.id)} onChange={e => setSelected(e.target.checked ? [...selected, u.id] : selected.filter(id => id !== u.id))} /></td>
+                                            <td className="p-2 w-16 text-left"><img src={u.avatar} alt="avatar" className="rounded-full w-8 h-8" /></td>
+                                            <td className="p-2 w-40 text-left">{u.fullName}</td>
+                                            <td className="p-2 w-56 text-left">{u.email}</td>
+                                            <td className="p-2 w-32 text-left">
+                                                {roleObj ? (
+                                                    <span title={roleObj.permissions.join(", ")}>{roleObj.label}</span>
+                                                ) : (
+                                                    u.role_name || u.role
+                                                )}
+                                            </td>
+                                            <td className="p-2 w-24 text-left">{u.status}</td>
+                                            <td className="p-2 w-32 text-left">{u.createdAt}</td>
+                                            <td className="p-2 w-32 text-left">
+                                                <button className="mr-2 text-blue-600" onClick={() => handleEdit(u)}>Edit</button>
+                                                <button className="text-red-600" onClick={() => handleDelete(u.id)}>Delete</button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </main>
-            {showForm && <AccountForm roles={ROLES} onSave={handleCreate} onCancel={() => setShowForm(false)} />}
+            {showForm && <AccountForm roles={roles} onSave={handleCreate} onCancel={() => setShowForm(false)} />}
             {editUser && (
                 <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center z-50" style={{ pointerEvents: 'auto' }}>
                     <div
@@ -212,8 +278,8 @@ function Accounts() {
                         <label className="block mb-2 font-semibold">Email</label>
                         <input name="email" value={editUser.email} onChange={e => setEditUser({ ...editUser, email: e.target.value })} className="border p-2 rounded w-full mb-2" required type="email" />
                         <label className="block mb-2 font-semibold">Role</label>
-                        <select name="role" value={editUser.role} onChange={e => setEditUser({ ...editUser, role: e.target.value })} className="border p-2 rounded w-full mb-2">
-                            {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                        <select name="role" value={editUser.role} onChange={e => setEditUser({ ...editUser, role: Number(e.target.value) })} className="border p-2 rounded w-full mb-2">
+                            {roles.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
                         </select>
                         <label className="block mb-2 font-semibold">Status</label>
                         <select name="status" value={editUser.status} onChange={e => setEditUser({ ...editUser, status: e.target.value })} className="border p-2 rounded w-full mb-4">

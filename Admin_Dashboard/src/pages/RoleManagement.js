@@ -1,37 +1,46 @@
-import React, { useState } from 'react';
-import { useEffect } from 'react';
-import Accounts from './Accounts';
+import React, { useState, useEffect } from 'react';
 
-const DEFAULT_ROLES = [
-    { name: 'sales', permissions: ['orders.view', 'orders.edit'] },
-    { name: 'inventory', permissions: ['products.manage'] },
-    { name: 'support', permissions: ['orders.view', 'reports.view'] },
-    { name: 'delivery', permissions: ['orders.view'] },
-    { name: 'analyst', permissions: ['reports.view'] },
-];
-
-const ALL_PERMISSIONS = [
-    'orders.view',
-    'orders.edit',
-    'products.manage',
-    'reports.view',
-    'users.manage',
-    'roles.manage',
-];
+const ROLES_API_URL = "http://localhost:8000/api/roles/roles/";
+const USERS_API_URL = "http://localhost:8000/api/users/users/";
+const PERMISSIONS_API_URL = "http://localhost:8000/api/roles/permissions/";
 
 function RoleManagement() {
-    const [roles, setRoles] = useState(DEFAULT_ROLES.map(r => ({
-        ...r,
-        description: r.name.charAt(0).toUpperCase() + r.name.slice(1) + ' role',
-        employees: 0
-    })));
+    const [roles, setRoles] = useState([]);
     const [accounts, setAccounts] = useState([]);
-    // Lấy danh sách users từ localStorage hoặc window để demo, thực tế sẽ lấy từ API hoặc context
+    const [permissions, setPermissions] = useState([]);
+
+    // Fetch roles, users, permissions from API
     useEffect(() => {
-        // Nếu Accounts dùng API thì thay bằng fetch, ở đây demo lấy từ window.mockUsers nếu có
-        if (window.mockUsers) {
-            setAccounts(window.mockUsers);
-        }
+        fetch(ROLES_API_URL)
+            .then(res => res.json())
+            .then(data => {
+                setRoles(Array.isArray(data) ? data.map(r => ({
+                    ...r,
+                    employees: 0,
+                })) : []);
+            })
+            .catch((err) => {
+                console.error("Error fetching roles:", err);
+                setRoles([]);
+            });
+        fetch(USERS_API_URL)
+            .then(res => res.json())
+            .then(data => {
+                setAccounts(Array.isArray(data) ? data : []);
+            })
+            .catch((err) => {
+                console.error("Error fetching users:", err);
+                setAccounts([]);
+            });
+        fetch(PERMISSIONS_API_URL)
+            .then(res => res.json())
+            .then(data => {
+                setPermissions(Array.isArray(data) ? data : []);
+            })
+            .catch((err) => {
+                console.error("Error fetching permissions:", err);
+                setPermissions([]);
+            });
     }, []);
 
     // Tính lại số lượng nhân viên cho từng role
@@ -50,23 +59,44 @@ function RoleManagement() {
         setRoles(roles.map(r => r.name === data.name ? { ...r, ...data } : r));
         setEditRole(null);
     };
+    // Tạo role mới: gửi lên API (nếu backend hỗ trợ), ở đây chỉ cập nhật FE
     const [roleName, setRoleName] = useState('');
-    const [selectedPermissions, setSelectedPermissions] = useState([]);
+    const [selectedPermissionIds, setSelectedPermissionIds] = useState([]);
 
-    const handlePermissionChange = (perm) => {
-        setSelectedPermissions((prev) =>
-            prev.includes(perm)
-                ? prev.filter((p) => p !== perm)
-                : [...prev, perm]
+    const handlePermissionChange = (permId) => {
+        setSelectedPermissionIds((prev) =>
+            prev.includes(permId)
+                ? prev.filter((p) => p !== permId)
+                : [...prev, permId]
         );
     };
 
-    const handleCreateRole = (e) => {
+    const handleCreateRole = async (e) => {
         e.preventDefault();
         if (!roleName) return;
-        setRoles([...roles, { name: roleName, permissions: selectedPermissions }]);
+        // Gửi POST lên API để tạo role mới
+        const res = await fetch(ROLES_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                name: roleName,
+                description: roleName.charAt(0).toUpperCase() + roleName.slice(1) + ' role',
+                permission_ids: selectedPermissionIds,
+            })
+        });
+        if (res.ok) {
+            // Sau khi tạo thành công, fetch lại danh sách role
+            fetch(ROLES_API_URL)
+                .then(res => res.json())
+                .then(data => {
+                    setRoles(Array.isArray(data) ? data.map(r => ({
+                        ...r,
+                        employees: accounts.filter(u => u.role === r.name).length,
+                    })) : []);
+                });
+        }
         setRoleName('');
-        setSelectedPermissions([]);
+        setSelectedPermissionIds([]);
     };
 
     return (
@@ -81,24 +111,18 @@ function RoleManagement() {
                             value={roleName}
                             onChange={(e) => setRoleName(e.target.value)}
                             placeholder="Enter role name"
-                            list="role-options"
                         />
-                        <datalist id="role-options">
-                            {DEFAULT_ROLES.map((role) => (
-                                <option key={role.name} value={role.name} />
-                            ))}
-                        </datalist>
                         <label className="block mb-2 font-semibold">Permissions</label>
                         <div className="grid grid-cols-2 gap-2 mb-4">
-                            {ALL_PERMISSIONS.map((perm) => (
-                                <label key={perm} className="flex items-center">
+                            {permissions.map((perm) => (
+                                <label key={perm.id} className="flex items-center">
                                     <input
                                         type="checkbox"
-                                        checked={selectedPermissions.includes(perm)}
-                                        onChange={() => handlePermissionChange(perm)}
+                                        checked={selectedPermissionIds.includes(perm.id)}
+                                        onChange={() => handlePermissionChange(perm.id)}
                                         className="mr-2"
                                     />
-                                    {perm}
+                                    {perm.name}
                                 </label>
                             ))}
                         </div>
@@ -124,7 +148,7 @@ function RoleManagement() {
                             {roles.map((role, idx) => (
                                 <tr key={idx}>
                                     <td className="p-2 font-bold w-40 text-left">{role.name}</td>
-                                    <td className="p-2 w-80 text-left">{role.permissions.join(', ')}</td>
+                                    <td className="p-2 w-80 text-left">{Array.isArray(role.permissions) ? role.permissions.map(p => p.name).join(', ') : ''}</td>
                                     <td className="p-2 w-64 text-left">{role.description}</td>
                                     <td className="p-2 w-40 text-left">{role.employees}</td>
                                     <td className="p-2 w-32 text-left">
@@ -154,10 +178,18 @@ function RoleManagement() {
                                         <input name="description" value={editRole.description} onChange={e => setEditRole({ ...editRole, description: e.target.value })} className="border p-2 rounded w-full mb-2" required />
                                         <label className="block mb-2 font-semibold">Permissions</label>
                                         <div className="grid grid-cols-2 gap-2 mb-2">
-                                            {ALL_PERMISSIONS.map(perm => (
-                                                <label key={perm} className="flex items-center">
-                                                    <input type="checkbox" checked={editRole.permissions.includes(perm)} onChange={() => setEditRole({ ...editRole, permissions: editRole.permissions.includes(perm) ? editRole.permissions.filter(p => p !== perm) : [...editRole.permissions, perm] })} className="mr-2" />
-                                                    {perm}
+                                            {permissions.map(perm => (
+                                                <label key={perm.id} className="flex items-center">
+                                                    <input type="checkbox" checked={Array.isArray(editRole.permissions) && editRole.permissions.some(p => p.id === perm.id)} onChange={() => {
+                                                        let newPerms = Array.isArray(editRole.permissions) ? editRole.permissions.map(p => p.id) : [];
+                                                        if (newPerms.includes(perm.id)) {
+                                                            newPerms = newPerms.filter(id => id !== perm.id);
+                                                        } else {
+                                                            newPerms.push(perm.id);
+                                                        }
+                                                        setEditRole({ ...editRole, permissions: permissions.filter(p => newPerms.includes(p.id)) });
+                                                    }} className="mr-2" />
+                                                    {perm.name}
                                                 </label>
                                             ))}
                                         </div>

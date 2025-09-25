@@ -3,3 +3,4 @@ from .category import Category
 from .product import Product
 from .cart import Cart, CartItem
 from .address import CustomerAddress
+from .role import Role, Permission

@@ -15,7 +15,7 @@ const SingleProduct = () => {
   const handleTabView = (viewName) => setTabView(viewName);
 
   //   get product
-  let product = response.filter((product) => product.id == id)[0];
+  let product = response.filter((product) => product.id === id)[0];
 
   return (
     <div>
@@ -29,11 +29,11 @@ const SingleProduct = () => {
             Dashboard
           </NavLink>
         </div>
-        {">"}
+        <span className="mx-2">&gt;</span>
         <NavLink exact to="/app/all-products" className="mx-2 text-purple-600">
           All Products
         </NavLink>
-        {">"}
+        <span className="mx-2">&gt;</span>
         <p className="mx-2">{product.name}</p>
       </div>
 

@@ -1,6 +1,5 @@
 import React from "react";
 import PageTitle from "../components/Typography/PageTitle";
-import RoleManagement from "./RoleManagement";
 
 const Profile = () => {
   return (

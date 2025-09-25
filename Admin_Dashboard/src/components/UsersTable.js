@@ -12,7 +12,7 @@ import {
 } from "@windmill/react-ui";
 // import response from "../utils/demo/usersData";
 
-const UsersTable = ({ resultsPerPage, filter }) => {
+const UsersTable = ({ resultsPerPage, filter, staffMode }) => {
   const [page, setPage] = useState(1);
   const [data, setData] = useState([]);
 
@@ -27,13 +27,17 @@ const UsersTable = ({ resultsPerPage, filter }) => {
   // on page change, load new sliced data
   // here you would make another server request for new data
   useEffect(() => {
-    fetch("http://localhost:8000/users/list/")
+    // Use staffMode to determine endpoint
+    const endpoint = staffMode
+      ? "http://localhost:8000/api/users/users/?staff_only=true"
+      : "http://localhost:8000/api/users/users/?staff_only=false";
+    fetch(endpoint)
       .then(res => res.json())
       .then(users => {
         setTotalResults(users.length);
         setData(users.slice((page - 1) * resultsPerPage, page * resultsPerPage));
       });
-  }, [page, resultsPerPage, filter]);
+  }, [page, resultsPerPage, staffMode]);
 
   return (
     <div>
