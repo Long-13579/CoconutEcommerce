@@ -1,2 +1,27 @@
+# Django stuff
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+
+# If you use Django cache in a file
+cache/
+*.cache
+
+# Media and static (if not using S3 or similar)
+staticfiles/
+
+# Virtual environment
+venv/
+env/
+ENV/
 ecommerceEnv
 .env
+.venv
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
