@@ -1,14 +1,14 @@
-from django.http import HttpResponse
-import stripe 
+import base64
+import hashlib
+import hmac
+import json
+import uuid
+import requests
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from ..models import Cart, Order, OrderItem
 from ..serializers import OrderSerializer, OrderItemSerializer
-from django.views.decorators.csrf import csrf_exempt
-
-stripe.api_key = settings.STRIPE_SECRET_KEY
-endpoint_secret = settings.WEBHOOK_SECRET
 
 @api_view(['GET'])
 def get_orders(request):
@@ -22,77 +22,95 @@ def create_checkout_session(request):
     cart_code = request.data.get("cart_code")
     email = request.data.get("email")
     cart = Cart.objects.get(cart_code=cart_code)
+    cartItems = cart.cartitems.all()
+
+    total_amount = 0
+    for item in cartItems:
+      total_amount += item.product.price * item.quantity
+
+    total_amount *= 26000
+
+    json_str = json.dumps({"cart_code": cart_code, "email": email})
+    base64_bytes = base64.b64encode(json_str.encode("utf-8"))
+    base64_extra_data = base64_bytes.decode("utf-8")
+
+    # parameters send to MoMo get get payUrl
+    endpoint = settings.MOMO_ENDPOINT
+    accessKey = settings.MOMO_ACCESS_KEY
+    secretKey = settings.MOMO_SECRET_KEY
+    orderInfo = settings.MOMO_ORDER_INFO
+    partnerCode = settings.MOMO_PARTNER_CODE
+    redirectUrl = settings.MOMO_REDIRECT_URL
+    ipnUrl = settings.MOMO_IPN_URL
+    amount = str(int(total_amount))
+    orderId = str(uuid.uuid4())
+    requestId = str(uuid.uuid4())
+    extraData = base64_extra_data  
+    partnerName = settings.MOMO_PARTNER_NAME
+    requestType = settings.MOMO_REQUEST_TYPE
+    storeId = settings.MOMO_STORE_ID
+    orderGroupId = ""
+    autoCapture = True
+    lang = settings.MOMO_LANGUAGE
+    orderGroupId = ""
+    rawSignature = "accessKey=" + accessKey + "&amount=" + amount + "&extraData=" + extraData + "&ipnUrl=" + ipnUrl + "&orderId=" + orderId + "&orderInfo=" + orderInfo + "&partnerCode=" + partnerCode + "&redirectUrl=" + redirectUrl+ "&requestId=" + requestId + "&requestType=" + requestType
+
+    # signature
+    h = hmac.new(bytes(secretKey, 'ascii'), bytes(rawSignature, 'ascii'), hashlib.sha256)
+    signature = h.hexdigest()
+
     try:
-        checkout_session = stripe.checkout.Session.create(
-            customer_email= email,
-            payment_method_types=['card'],
-
-
-            line_items=[
-                {
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {'name': item.product.name},
-                        'unit_amount': int(item.product.price * 100),  # Amount in cents
-                    },
-                    'quantity': item.quantity,
-                }
-                for item in cart.cartitems.all()
-            ] + [
-                {
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {'name': 'VAT Fee'},
-                        'unit_amount': 500,  # $5 in cents
-                    },
-                    'quantity': 1,
-                }
-            ],
-
-
-           
-            mode='payment',
-            success_url="http://localhost:3000/success",
-            cancel_url="http://localhost:3000/cancel",
-            metadata = {"cart_code": cart_code}
-        )
-        return Response({'data': checkout_session})
+        data = {
+            'partnerCode': partnerCode,
+            'orderId': orderId,
+            'partnerName': partnerName,
+            'storeId': storeId,
+            'ipnUrl': ipnUrl,
+            'amount': amount,
+            'lang': lang,
+            'requestType': requestType,
+            'redirectUrl': redirectUrl,
+            'autoCapture': autoCapture,
+            'orderInfo': orderInfo,
+            'requestId': requestId,
+            'extraData': extraData,
+            'signature': signature,
+            'orderGroupId': orderGroupId
+        }
+        data = json.dumps(data)
+        clen = len(data)
+        response = requests.post(endpoint, data=data, headers={'Content-Type': 'application/json', 'Content-Length': str(clen)})
+        return Response(response.json(), status=200)
     except Exception as e:
         return Response({'error': str(e)}, status=400)
 
+@api_view(['GET'])
+def finish_checkout(request):
+  result_code = request.GET.get("resultCode")
+  if (int(result_code) != 0):
+    return Response(status=204)
+  
+  extra_data = request.GET.get("extraData")
+  decoded_bytes = base64.b64decode(extra_data)         
+  decoded_str = decoded_bytes.decode("utf-8")              
+  decoded_json = json.loads(decoded_str)
 
+  cart_code = int(decoded_json["cart_code"])
+  amount = int(request.GET.get("amount"))
+  currency = "VND"
+  email = decoded_json["email"]
+  id = request.GET.get("transId")
 
+  session = {
+    'id': id,
+    'amount_total': amount,
+    'currency': currency,
+    'customer_email': email,
+  }
 
-@csrf_exempt
-def my_webhook_view(request):
-  payload = request.body
-  sig_header = request.META['HTTP_STRIPE_SIGNATURE']
-  event = None
+  fulfill_checkout(session, cart_code)
 
-  try:
-    event = stripe.Webhook.construct_event(
-      payload, sig_header, endpoint_secret
-    )
-  except ValueError as e:
-    # Invalid payload
-    return HttpResponse(status=400)
-  except stripe.error.SignatureVerificationError as e:
-    # Invalid signature
-    return HttpResponse(status=400)
-
-  if (
-    event['type'] == 'checkout.session.completed'
-    or event['type'] == 'checkout.session.async_payment_succeeded'
-  ):
-    session = event['data']['object']
-    cart_code = session.get("metadata", {}).get("cart_code")
-
-    fulfill_checkout(session, cart_code)
-
-
-  return HttpResponse(status=200)
-
-
+  return Response(status=200)
 
 def fulfill_checkout(session, cart_code):
     
@@ -101,9 +119,6 @@ def fulfill_checkout(session, cart_code):
         currency=session["currency"],
         customer_email=session["customer_email"],
         status="Paid")
-    
-
-    print(session)
 
     cart = Cart.objects.get(cart_code=cart_code)
     cartitems = cart.cartitems.all()

@@ -5,4 +5,5 @@ urlpatterns = [
     path("categories/", include("apiApp.urls.categories")),
     path("carts/", include("apiApp.urls.carts")),
     path("users/", include("apiApp.urls.users")),
+    path("order/", include("apiApp.urls.orders")),
 ]

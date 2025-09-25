@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -139,6 +140,16 @@ MEDIA_ROOT = BASE_DIR/'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
-STRIPE_PUBLIC_KEY = os.environ.get("STRIPE_PUBLIC_KEY")
-WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET")
+load_dotenv()
+
+MOMO_ENDPOINT = os.environ.get("MOMO_ENDPOINT")
+MOMO_ACCESS_KEY = os.environ.get("MOMO_ACCESS_KEY")
+MOMO_SECRET_KEY = os.environ.get("MOMO_SECRET_KEY")
+MOMO_REDIRECT_URL = os.environ.get("MOMO_REDIRECT_URL")
+MOMO_IPN_URL = os.environ.get("MOMO_IPN_URL")
+MOMO_ORDER_INFO = os.environ.get("MOMO_ORDER_INFO")
+MOMO_PARTNER_CODE = os.environ.get("MOMO_PARTNER_CODE")
+MOMO_PARTNER_NAME = os.environ.get("MOMO_PARTNER_NAME")
+MOMO_REQUEST_TYPE = os.environ.get("MOMO_REQUEST_TYPE")
+MOMO_STORE_ID = os.environ.get("MOMO_STORE_ID")
+MOMO_LANGUAGE = os.environ.get("MOMO_LANGUAGE")
