@@ -13,6 +13,9 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
     def get_queryset(self):
+        # For unsafe methods (DELETE, PUT, PATCH), always return all users
+        if self.request.method not in ['GET', 'HEAD', 'OPTIONS']:
+            return CustomUser.objects.all()
         staff_only = self.request.query_params.get('staff_only')
         if staff_only == 'true':
             return CustomUser.objects.filter(is_staff_account=True)

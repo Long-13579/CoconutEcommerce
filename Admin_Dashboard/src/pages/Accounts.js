@@ -167,17 +167,40 @@ function Accounts() {
         }
     };
 
-    const handleDelete = id => {
+    const handleDelete = async id => {
         if (window.confirm("Are you sure to delete this account?")) {
-            setUsers(users.filter(u => u.id !== id));
+            try {
+                const res = await fetch(`${API_URL.replace('?staff_only=true','')}${id}/`, {
+                    method: "DELETE"
+                });
+                if (res.ok) {
+                    setUsers(users.filter(u => u.id !== id));
+                } else {
+                    alert("Failed to delete account from server.");
+                }
+            } catch (err) {
+                alert("Network error: " + err.message);
+            }
         }
     };
 
-    const handleBulkDelete = () => {
+    const handleBulkDelete = async () => {
         if (selected.length === 0) return;
         if (window.confirm("Delete selected accounts?")) {
+            let successCount = 0;
+            for (const id of selected) {
+                try {
+                    const res = await fetch(`${API_URL.replace('?staff_only=true','')}${id}/`, {
+                        method: "DELETE"
+                    });
+                    if (res.ok) successCount++;
+                } catch (err) {}
+            }
             setUsers(users.filter(u => !selected.includes(u.id)));
             setSelected([]);
+            if (successCount !== selected.length) {
+                alert(`Deleted ${successCount}/${selected.length} accounts from server.`);
+            }
         }
     };
 
