@@ -58,6 +58,16 @@ def product_update(request, slug):
         return Response(detail_serializer.data, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['DELETE'])
+def product_delete(request, slug):
+    try:
+        product = Product.objects.get(slug=slug)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    product.delete()
+    return Response({"message": "Product deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
 
 
 
