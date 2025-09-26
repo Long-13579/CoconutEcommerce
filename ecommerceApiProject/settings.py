@@ -92,6 +92,36 @@ DATABASES = {
     }
 }
 
+# Database
+# https://docs.djangoproject.com/en/5.1/ref/settings/#databases 
+
+DB = os.getenv("DB")
+# If you set DB to True you will have the postgres database, if set DB to False, you will the sqlite3 databse.
+
+if DB in ["True", True]:
+    print("Appa yip yip")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv("POSTGRES_DB"),
+            'USER': os.getenv("POSTGRES_USER"),
+            'PASSWORD': os.getenv("POSTGRES_PASSWORD"),
+            'HOST': os.getenv("POSTGRES_HOST"),
+            'PORT': os.getenv("POSTGRES_PORT"),
+        }
+    }
+
+
+else:
+    print("Momo yop yop")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

@@ -32,3 +32,5 @@ def product_search(request):
     )
     serializer = ProductListSerializer(products, many=True)
     return Response(serializer.data)
+
+
