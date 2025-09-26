@@ -99,6 +99,24 @@ function RoleManagement() {
         setSelectedPermissionIds([]);
     };
 
+    // Xóa role qua API
+    const handleDeleteRole = async (roleId) => {
+        if (window.confirm("Are you sure to delete this role?")) {
+            try {
+                const res = await fetch(`${ROLES_API_URL}${roleId}/`, {
+                    method: "DELETE"
+                });
+                if (res.ok) {
+                    setRoles(roles.filter(r => r.id !== roleId));
+                } else {
+                    alert("Failed to delete role from server.");
+                }
+            } catch (err) {
+                alert("Network error: " + err.message);
+            }
+        }
+    };
+
     return (
         <div className="w-full flex flex-col flex-grow">
             <h2 className="text-2xl font-bold mb-4 text-left">Role Management</h2>
@@ -153,7 +171,7 @@ function RoleManagement() {
                                     <td className="p-2 w-40 text-left">{role.employees}</td>
                                     <td className="p-2 w-32 text-left">
                                         <button className="mr-2 text-blue-600" onClick={() => handleEdit(role)}>Edit</button>
-                                        <button className="text-red-600" onClick={() => setRoles(roles.filter((_, i) => i !== idx))}>Delete</button>
+                                        <button className="text-red-600" onClick={() => handleDeleteRole(role.id)}>Delete</button>
                                     </td>
                                 </tr>
                             ))}
