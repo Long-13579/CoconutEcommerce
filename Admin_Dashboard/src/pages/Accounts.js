@@ -170,7 +170,7 @@ function Accounts() {
     const handleDelete = async id => {
         if (window.confirm("Are you sure to delete this account?")) {
             try {
-                const res = await fetch(`${API_URL.replace('?staff_only=true','')}${id}/`, {
+                const res = await fetch(`${API_URL.replace('?staff_only=true', '')}${id}/`, {
                     method: "DELETE"
                 });
                 if (res.ok) {
@@ -190,11 +190,11 @@ function Accounts() {
             let successCount = 0;
             for (const id of selected) {
                 try {
-                    const res = await fetch(`${API_URL.replace('?staff_only=true','')}${id}/`, {
+                    const res = await fetch(`${API_URL.replace('?staff_only=true', '')}${id}/`, {
                         method: "DELETE"
                     });
                     if (res.ok) successCount++;
-                } catch (err) {}
+                } catch (err) { }
             }
             setUsers(users.filter(u => !selected.includes(u.id)));
             setSelected([]);
