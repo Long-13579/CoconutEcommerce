@@ -12,6 +12,7 @@ cache/
 
 # Media and static (if not using S3 or similar)
 staticfiles/
+media/
 
 # Virtual environment
 venv/
