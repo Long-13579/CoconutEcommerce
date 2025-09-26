@@ -44,6 +44,20 @@ def product_create(request):
         return Response(detail_serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['PUT', 'PATCH'])
+def product_update(request, slug):
+    try:
+        product = Product.objects.get(slug=slug)
+    except Product.DoesNotExist:
+        return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ProductCreateSerializer(product, data=request.data, partial=True)  # PATCH cho phép update 1 phần
+    if serializer.is_valid():
+        product = serializer.save()
+        detail_serializer = ProductDetailSerializer(product)
+        return Response(detail_serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
