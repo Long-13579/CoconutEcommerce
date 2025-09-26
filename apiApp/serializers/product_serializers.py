@@ -14,3 +14,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id", "name", "description", "slug", "image", "price",
         ]
+
+
+class ProductCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = [
+            "name", "description", "slug", "image", "price", "category", "featured"
+        ]
