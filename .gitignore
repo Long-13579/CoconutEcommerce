@@ -21,6 +21,8 @@ ENV/
 ecommerceEnv
 .env
 .venv
+node_modules/
+.bin/
 
 # IDE/editor
 .vscode/
