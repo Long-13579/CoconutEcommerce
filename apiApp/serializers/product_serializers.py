@@ -20,6 +20,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "id", 
             "photo", 
             "name", 
+            "slug",
             "description",
             "shortDescription", 
             "featureDescription", 

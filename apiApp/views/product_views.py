@@ -13,6 +13,13 @@ def product_list(request):
     serializer = ProductListSerializer(products, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+def product_list_by_category(request):
+    category_name = request.query_params.get("category_name")
+    products = Product.objects.filter(featured=True, category__name__icontains=category_name)
+    serializer = ProductListSerializer(products, many=True)
+    return Response(serializer.data)
+
 
 @api_view(["GET"])
 def product_detail(request, slug):
