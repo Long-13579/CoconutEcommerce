@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -84,13 +86,30 @@ WSGI_APPLICATION = 'ecommerceApiProject.wsgi.application'
 
 # Database
 
-# Sử dụng SQLite cho phát triển
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+DB = os.getenv("DB")
+# If you set DB to True you will have the mysql database, if set DB to False, you will the sqlite3 databse.
+
+if DB in ["True", True]:
+    print("Connect to mysql")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv("MYSQL_DB_NAME"),
+            'USER': os.getenv("MYSQL_USER"),
+            'PASSWORD': os.getenv("MYSQL_PASSWORD"),
+            'HOST': os.getenv("MYSQL_HOST"),
+            'PORT': os.getenv("MYSQL_PORT"),  
+        }
     }
-}
+
+else:
+    print("Connect to sqlite3")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 
@@ -141,7 +160,6 @@ MEDIA_ROOT = BASE_DIR/'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-load_dotenv()
 
 MOMO_ENDPOINT = os.environ.get("MOMO_ENDPOINT")
 MOMO_ACCESS_KEY = os.environ.get("MOMO_ACCESS_KEY")
