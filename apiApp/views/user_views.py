@@ -69,27 +69,23 @@ User = get_user_model()
 
 @api_view(["POST"])
 def create_user(request):
-    role_name = request.data.get("role")
-    role_obj = None
-    if role_name:
-        from apiApp.models.role import Role
-        try:
-            role_obj = Role.objects.get(name=role_name)
-        except Role.DoesNotExist:
-            role_obj = None
+    serializer = UserSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    serializer.save() 
+    return Response(serializer.data)
+
+@api_view(["POST"])
+def login(request):
+    email = request.data.get("email")
     password = request.data.get("password")
-    user = User.objects.create(
-        username=request.data.get("username"),
-        email=request.data.get("email"),
-        first_name=request.data.get("first_name"),
-        last_name=request.data.get("last_name"),
-        profile_picture_url=request.data.get("profile_picture_url"),
-        role=role_obj
-    )
-    if password:
-        user.set_password(password)
-        user.save()
-        user.password = password  # For returning in response
+    user = User.objects.filter(email=email).first()
+
+    if user is None:
+        return Response({"error": "Invalid email or password"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if user.check_password(password):
+        return Response({"error": "Invalid email or password"}, status=status.HTTP_400_BAD_REQUEST)
+
     serializer = UserSerializer(user)
     return Response(serializer.data)
 

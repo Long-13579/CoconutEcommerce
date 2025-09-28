@@ -9,6 +9,7 @@ router.register(r'users', UserViewSet)
 
 urlpatterns = router.urls + [
     path("create/", views.create_user, name="create_user"),
+    path("login/", views.login, name="login"),
     path("exists/<str:email>", views.existing_user, name="existing_user"),
     path("add_address/", views.add_address, name="add_address"),
     path("get_address/", views.get_address, name="get_address"),
