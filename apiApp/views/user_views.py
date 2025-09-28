@@ -1,4 +1,25 @@
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+# API login trả về JWT và role
 from rest_framework.decorators import api_view
+@api_view(["POST"])
+def login_view(request):
+    email = request.data.get("email")
+    password = request.data.get("password")
+    user = authenticate(request, username=email, password=password)
+    if user is not None:
+        refresh = RefreshToken.for_user(user)
+        role_name = user.role.name if user.role else ""
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "role": role_name,
+            "email": user.email,
+            "username": user.username,
+        })
+    return Response({"detail": "Invalid credentials"}, status=400)
+from rest_framework.decorators import api_view
+from apiApp.utils.permissions import role_required
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
@@ -39,6 +60,10 @@ class UserViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+        @role_required(['admin'])
+        def destroy(self, request, *args, **kwargs):
+            # Chỉ admin mới được xóa user
+            return super().destroy(request, *args, **kwargs)
 User = get_user_model()
 
 

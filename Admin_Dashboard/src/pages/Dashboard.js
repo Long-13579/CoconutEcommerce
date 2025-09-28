@@ -20,7 +20,7 @@ function Dashboard() {
   const [newOrders, setNewOrders] = useState(0);
 
   useEffect(() => {
-    fetch("http://localhost:8000/users/list/")
+    fetch("http://localhost:8000/api/users/list/")
       .then(res => res.json())
       .then(users => {
         if (Array.isArray(users)) {
@@ -30,7 +30,7 @@ function Dashboard() {
         }
       })
       .catch(() => setTotalCustomers(0));
-    fetch("http://localhost:8000/carts/list/")
+    fetch("http://localhost:8000/api/carts/list/")
       .then(res => res.json())
       .then(orders => {
         if (Array.isArray(orders)) {

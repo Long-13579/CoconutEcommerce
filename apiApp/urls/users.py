@@ -2,6 +2,7 @@ from rest_framework import routers
 from apiApp.views.user_views import UserViewSet
 from django.urls import path
 from apiApp.views import user_views as views
+from apiApp.views.user_views import login_view
 
 router = routers.DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -12,4 +13,5 @@ urlpatterns = router.urls + [
     path("add_address/", views.add_address, name="add_address"),
     path("get_address/", views.get_address, name="get_address"),
     path("list/", views.user_list, name="user_list"),
+    path('login/', login_view, name='login'),
 ]
