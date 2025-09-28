@@ -5,13 +5,8 @@ from .models.cart import Cart, CartItem
 from .models.category import Category
 from .models.product import Product
 from .models.user import CustomUser
-
-admin.site.register(CustomerAddress)
-admin.site.register(Cart)
-admin.site.register(CartItem)
-admin.site.register(Category)
-admin.site.register(Product)
-admin.site.register(CustomUser)
+from .models.order import Order, OrderItem
+from django.contrib.auth.admin import UserAdmin
 
 class CustomUserAdmin(UserAdmin):
     list_display = ("username", "email", "first_name", "last_name")

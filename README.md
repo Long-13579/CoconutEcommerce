@@ -46,12 +46,15 @@ This is a backend e-commerce REST API built with Django and Django REST Framewor
   pip install -r requirements.txt
   ```
   **4. Set up environment variables in .env:**
+  - Rename the file env.example to .env.
+  - Change and assign your own value.
   ```bash
-  STRIPE_SECRET_KEY=your_stripe_secret_key
-  WEBHOOK_SECRET=your_webhook_secret
+  MYSQL_DB_NAME = "Your Database Name"
+  MYSQL_PASSWORD = "Your Database Password"
   ```
   **5. Apply migrations and run the development server:**
   ```bash
   python manage.py migrate
+  python manage.py init_data
   python manage.py runserver
   ```

@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('apiApp', '0001_initial'),
+        ('apiApp', '0005_add_initial_permissions'),
     ]
 
     operations = [
