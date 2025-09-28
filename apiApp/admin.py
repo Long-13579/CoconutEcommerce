@@ -8,8 +8,14 @@ from .models.user import CustomUser
 from .models.order import Order, OrderItem
 from django.contrib.auth.admin import UserAdmin
 
+
+# CustomUserAdmin without is_staff or list_filter
 class CustomUserAdmin(UserAdmin):
-    list_display = ("username", "email", "first_name", "last_name")
+    list_display = ("username", "email")
+
+    # Remove any reference to is_staff or list_filter
+    list_filter = ()
+
 admin.site.register(CustomUser, CustomUserAdmin)
 
 
