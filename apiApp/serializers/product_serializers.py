@@ -7,14 +7,30 @@ class ProductListSerializer(serializers.ModelSerializer):
     photo = serializers.SerializerMethodField()
     shortDescription = serializers.SerializerMethodField()
     featureDescription = serializers.SerializerMethodField()
-    londDescription = serializers.SerializerMethodField()
+    longDescription = serializers.SerializerMethodField()
     qty = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
     reviews = serializers.SerializerMethodField()
+    category_id = serializers.IntegerField(source="category.id", read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
 
     class Meta:
         model = Product
-        fields = ["id", "photo", "name", "shortDescription", "featureDescription", "londDescription", "price", "qty", "rating", "reviews"]
+        fields = [
+            "id", 
+            "photo", 
+            "name", 
+            "description",
+            "shortDescription", 
+            "featureDescription", 
+            "longDescription", 
+            "price", 
+            "qty", 
+            "rating", 
+            "reviews",
+            "category_id",
+            "category_name"
+        ]
 
     def get_photo(self, obj):
         return obj.image.url if obj.image else "https://vetra.laborasyon.com/assets/images/products/1.jpg"
@@ -25,7 +41,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_featureDescription(self, obj):
         return obj.description[:100] if obj.description else ""
 
-    def get_londDescription(self, obj):
+    def get_longDescription(self, obj):
         return obj.description if obj.description else ""
 
     def get_qty(self, obj):
@@ -38,10 +54,12 @@ class ProductListSerializer(serializers.ModelSerializer):
         return []
 
 class ProductDetailSerializer(serializers.ModelSerializer):
+    category_id = serializers.IntegerField(source="category.id", read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
     class Meta:
         model = Product
         fields = [
-            "id", "name", "description", "slug", "image", "price",
+            "id", "name", "description", "slug", "image", "price", "category_id", "category_name"
         ]
 
 class ProductCreateSerializer(serializers.ModelSerializer):
