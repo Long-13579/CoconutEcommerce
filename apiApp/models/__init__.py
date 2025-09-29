@@ -5,3 +5,4 @@ from .cart import Cart, CartItem
 from .address import CustomerAddress
 from .order import Order, OrderItem
 from .role import Role, Permission
+from .discount import Discount
