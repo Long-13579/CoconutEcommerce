@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('apiApp', '0007_cart_user'),
+        ('apiApp', '00011_cart_user'),
     ]
 
     operations = [
