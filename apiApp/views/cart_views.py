@@ -3,11 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status
 from ..models import Cart, CartItem, Product
 from ..serializers import CartSerializer, CartItemSerializer, CartStatSerializer, SimpleCartSerializer
+from ..utils.token_decode import get_user_id_from_request
 
 
 @api_view(["POST"])
 def add_to_cart(request):
-    user_id = request.data.get("user_id")
+    user_id = get_user_id_from_request(request=request)
     product_id = request.data.get("product_id")
 
     cart, _ = Cart.objects.get_or_create(user_id=user_id)
@@ -42,7 +43,8 @@ def delete_cartitem(request, pk):
 
 
 @api_view(['GET'])
-def get_cart(request, user_id):
+def get_cart(request):
+    user_id = get_user_id_from_request(request=request)
     cart = Cart.objects.filter(user_id=user_id).first()
     if cart:
         serializer = CartSerializer(cart)

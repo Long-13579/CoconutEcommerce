@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('apiApp', '0006_order_orderitem'),
+        ('apiApp', '0010_remove_customuser_first_name_and_more'),
     ]
 
     operations = [
