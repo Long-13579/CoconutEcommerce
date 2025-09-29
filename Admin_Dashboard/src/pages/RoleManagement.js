@@ -79,8 +79,12 @@ function RoleManagement() {
         })));
     }, [accounts]);
     const [editRole, setEditRole] = useState(null);
+    const [viewRole, setViewRole] = useState(null);
     const handleEdit = role => {
         setEditRole({ ...role });
+    };
+    const handleView = role => {
+        setViewRole(role);
     };
 
     const handleUpdate = data => {
@@ -203,7 +207,10 @@ function RoleManagement() {
                                         {Array.isArray(role.permissions) && role.permissions.length > 0 ? (
                                             <ul className="list-disc pl-4">
                                                 {role.permissions.map(p => (
-                                                    <li key={p.id}>{p.name}</li>
+                                                    <li key={p.id}>
+                                                        <span className="font-semibold text-gray-700">{p.name}</span>
+                                                        {p.description && <span className="ml-2 text-xs text-gray-500">({p.description})</span>}
+                                                    </li>
                                                 ))}
                                             </ul>
                                         ) : (
@@ -250,7 +257,8 @@ function RoleManagement() {
                                                         }
                                                         setEditRole({ ...editRole, permissions: permissions.filter(p => newPerms.includes(p.id)) });
                                                     }} className="mr-2" />
-                                                    {perm.name}
+                                                    <span>{perm.name}</span>
+                                                    {perm.description && <span className="ml-2 text-xs text-gray-500">({perm.description})</span>}
                                                 </label>
                                             ))}
                                         </div>
@@ -261,6 +269,39 @@ function RoleManagement() {
                                             <button type="submit" className="px-4 py-2 rounded bg-purple-600 text-white">Save</button>
                                         </div>
                                     </form>
+                                </div>
+                            )}
+                            {viewRole && (
+                                <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center z-50" style={{ pointerEvents: 'auto' }}>
+                                    <div
+                                        className="absolute top-0 left-0 right-0 bottom-0"
+                                        style={{ background: 'rgba(0,0,0,0.10)', backdropFilter: 'blur(4px)' }}
+                                        onClick={() => setViewRole(null)}
+                                    ></div>
+                                    <div className="relative bg-white p-6 rounded-xl shadow-lg w-[400px] min-w-[300px] z-10">
+                                        <h2 className="text-xl font-bold mb-4 text-center">Role Details</h2>
+                                        <div className="mb-2"><span className="font-semibold">Role Name:</span> {viewRole.name}</div>
+                                        <div className="mb-2"><span className="font-semibold">Description:</span> {viewRole.description}</div>
+                                        <div className="mb-2"><span className="font-semibold">Total Employees:</span> {viewRole.employees}</div>
+                                        <div className="mb-2">
+                                            <span className="font-semibold">Permissions:</span>
+                                            {Array.isArray(viewRole.permissions) && viewRole.permissions.length > 0 ? (
+                                                <ul className="list-disc pl-4 mt-2">
+                                                    {viewRole.permissions.map(p => (
+                                                        <li key={p.id}>
+                                                            <span className="font-semibold text-gray-700">{p.name}</span>
+                                                            {p.description && <span className="ml-2 text-xs text-gray-500">({p.description})</span>}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <span className="text-gray-400 italic ml-2">No permissions</span>
+                                            )}
+                                        </div>
+                                        <div className="flex justify-end gap-2 mt-4">
+                                            <button type="button" className="px-4 py-2 rounded bg-gray-300" onClick={() => setViewRole(null)}>Close</button>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </tbody>

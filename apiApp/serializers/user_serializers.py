@@ -10,9 +10,22 @@ class UserSerializer(serializers.ModelSerializer):
     role = serializers.PrimaryKeyRelatedField(queryset=get_user_model().role.field.related_model.objects.all(), required=False, allow_null=True, write_only=True)
     role_name = serializers.SerializerMethodField(read_only=True)
 
+    password = serializers.CharField(write_only=False, required=False)
+
     class Meta:
         model = get_user_model()
-        fields = ["id", "email", "username", "first_name", "last_name", "profile_picture_url", "avatar", "joined_on", "state", "role", "role_name", "is_staff_account"]
+        fields = [
+            "id", "email", "username", "profile_picture_url", "avatar", "joined_on", "state", "role", "role_name", "is_staff_account", "password"
+        ]
+
+    def create(self, validated_data):
+        password = validated_data.pop("password", None)
+        user = super().create(validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
+            user.password = password  # For returning in response
+        return user
 
     def get_role_name(self, obj):
         return obj.role.name if obj.role else None

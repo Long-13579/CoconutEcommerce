@@ -5,6 +5,16 @@
  * If you're looking to actual Router routes, go to
  * `routes/index.js`
  */
+export const menuByRole = {
+  admin: [
+    "Dashboard", "Orders", "Products", "Customers", "Chats", "Profile", "Staff Management", "Settings", "Logout"
+  ],
+  staff_inventory: ["Dashboard", "Products", "Profile", "Settings", "Logout"],
+  staff_support: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
+  staff_delivery: ["Dashboard", "Orders", "Profile", "Settings", "Logout"],
+  staff_sale: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
+};
+
 const routes = [
   {
     path: "/dashboard", // the url
