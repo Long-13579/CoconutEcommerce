@@ -71,8 +71,13 @@ User = get_user_model()
 def create_user(request):
     serializer = UserSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    serializer.save() 
-    return Response(serializer.data)
+    user = serializer.save() 
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        "user": serializer.data,
+        "access": str(refresh.access_token),
+        "refresh": str(refresh)
+    })
 
 @api_view(["POST"])
 def login(request):
