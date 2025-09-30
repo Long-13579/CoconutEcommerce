@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/users/', include('apiApp.urls.users')),
     path('api/roles/', include('apiApp.urls.roles')),
     # Nếu có permissions riêng, có thể thêm path('api/permissions/', ...)
+    path('api/delivery/', include('apiApp.urls.delivery')),
     path("", include("apiApp.urls")),
 ]
 

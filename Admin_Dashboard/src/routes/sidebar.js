@@ -7,12 +7,12 @@
  */
 export const menuByRole = {
   admin: [
-    "Dashboard", "Orders", "Products", "Customers", "Chats", "Profile", "Staff Management", "Settings", "Logout"
+    "Dashboard", "Orders", "Products", "Customers", "Chats", "Delivery", "Profile", "Staff Management", "Settings", "Logout"
   ],
   staff_inventory: ["Dashboard", "Products", "Profile", "Settings", "Logout"],
   staff_support: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
-  staff_delivery: ["Dashboard", "Orders", "Profile", "Settings", "Logout"],
-  staff_sale: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
+  staff_delivery: ["Dashboard", "Orders", "Delivery", "Profile", "Settings", "Logout"],
+  staff_sale: ["Dashboard", "Orders", "Customers", "Chats", "Delivery", "Profile", "Settings", "Logout"],
 };
 
 const routes = [
@@ -44,6 +44,11 @@ const routes = [
     path: "/customers",
     icon: "GroupIcon",
     name: "Customers",
+  },
+  {
+    path: "/delivery",
+    icon: "TruckIcon",
+    name: "Delivery",
   },
   {
     path: "/chats",

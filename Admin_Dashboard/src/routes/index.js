@@ -53,6 +53,10 @@ const routes = [
     component: Chats,
   },
   {
+    path: "/delivery",
+    component: lazy(() => import("../pages/Delivery")),
+  },
+  {
     path: "/manage-profile",
     component: Profile,
   },
