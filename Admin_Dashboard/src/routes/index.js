@@ -25,10 +25,15 @@ const OrderDetail = lazy(() => import("../pages/OrderDetail"))
  * If you're looking for the links rendered in the SidebarContent, go to
  * `routes/sidebar.js`
  */
+const Discounts = lazy(() => import("../pages/Discounts"));
 const routes = [
   {
     path: "/app/inventory-check",
     component: lazy(() => import("../pages/ProductsInventory")),
+  },
+  {
+    path: "/discounts",
+    component: Discounts,
   },
   {
     path: "/dashboard", // the url
