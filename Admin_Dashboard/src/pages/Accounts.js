@@ -111,6 +111,7 @@ function Accounts() {
         (filter ? u.role === filter || u.role_name === filter : true)
     );
 
+    // hàm handleCreate được gọi, gửi dữ liệu qua API
     const handleCreate = async data => {
         // Tìm role id từ danh sách roles
         const selectedRole = roles.find(r => r.value === data.role);

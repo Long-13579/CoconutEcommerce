@@ -8,6 +8,9 @@ def login_view(request):
     password = request.data.get("password")
     user = authenticate(request, username=email, password=password)
     if user is not None:
+        # Only allow admin and staff accounts to login
+        if not getattr(user, "is_staff_account", False) and not getattr(user, "is_superuser", False):
+            return Response({"detail": "You do not have permission to access the admin dashboard."}, status=403)
         refresh = RefreshToken.for_user(user)
         role_name = user.role.name if user.role else ""
         return Response({
