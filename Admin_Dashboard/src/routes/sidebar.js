@@ -7,7 +7,7 @@
  */
 export const menuByRole = {
   admin: [
-    "Dashboard", "Orders", "Products", "All Products", "Add Product", "Inventory Check", "Customers", "Chats", "Delivery", "Profile", "Staff Management", "Settings", "Logout"
+    "Dashboard", "Orders", "Products", "All Products", "Add Product", "Inventory Check", "Customers", "Chats", "Delivery", "Profile", "Staff Management", "Settings", "Logout", "Discounts"
   ],
   staff_inventory: ["Dashboard", "Products", "All Products", "Add Product", "Inventory Check", "Profile", "Settings", "Logout"],
   staff_support: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
@@ -36,11 +36,6 @@ function getAllowedRoutes() {
 }
 
 const baseRoutes = [
-  {
-    path: "/discounts",
-    icon: "MoneyIcon",
-    name: "Discounts",
-  },
   {
     path: "/dashboard", // the url
     icon: "HomeIcon", // the component being exported from icons/index.js

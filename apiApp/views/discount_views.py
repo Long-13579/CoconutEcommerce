@@ -48,6 +48,19 @@ def discount_update(request, pk):
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(["PUT"])
+def discount_update_products(request, pk):
+    try:
+        discount = Discount.objects.get(pk=pk)
+    except Discount.DoesNotExist:
+        return Response({"error": "Discount not found"}, status=status.HTTP_404_NOT_FOUND)
+    product_ids = request.data.get("product_ids", [])
+    if not isinstance(product_ids, list):
+        return Response({"error": "product_ids must be a list"}, status=status.HTTP_400_BAD_REQUEST)
+    discount.products.set(product_ids)
+    discount.save()
+    serializer = DiscountSerializer(discount)
+    return Response(serializer.data)
 
 # Partial update (PATCH)
 @api_view(["PATCH"])
