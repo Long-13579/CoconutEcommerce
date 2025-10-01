@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:8000/discounts/";
+const API_BASE = "http://localhost:8000/discount/";
 
 export const getDiscounts = async () => {
   const res = await fetch(API_BASE);
@@ -29,6 +29,16 @@ export const updateDiscount = async (id, data) => {
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error("Failed to update discount");
+  return await res.json();
+};
+
+export const updateDiscountProducts = async (id, product_ids) => {
+  const res = await fetch(`${API_BASE}${id}/update-products/`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ product_ids }),
+  });
+  if (!res.ok) throw new Error("Failed to update discount products");
   return await res.json();
 };
 

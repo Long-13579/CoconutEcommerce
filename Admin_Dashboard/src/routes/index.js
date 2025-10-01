@@ -14,6 +14,8 @@ const Settings = lazy(() => import("../pages/Settings"));
 const Page404 = lazy(() => import("../pages/404"));
 const Blank = lazy(() => import("../pages/Blank"));
 const OrderDetail = lazy(() => import("../pages/OrderDetail"))
+const Discounts = lazy(() => import("../pages/Discounts"));
+const DiscountDetail = lazy(() => import("../pages/DiscountDetail"));
 
 /**
  * ⚠ These are internal routes!
@@ -25,11 +27,14 @@ const OrderDetail = lazy(() => import("../pages/OrderDetail"))
  * If you're looking for the links rendered in the SidebarContent, go to
  * `routes/sidebar.js`
  */
-const Discounts = lazy(() => import("../pages/Discounts"));
 const routes = [
   {
     path: "/app/inventory-check",
     component: lazy(() => import("../pages/ProductsInventory")),
+  },
+  {
+    path: "/discounts/:id",
+    component: DiscountDetail,
   },
   {
     path: "/discounts",

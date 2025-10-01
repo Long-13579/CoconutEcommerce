@@ -20,3 +20,15 @@ class DiscountSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
         ]
+    
+    def validate(self, attrs):
+        start_date = attrs.get("start_date")
+        end_date = attrs.get("end_date")
+
+        if start_date and end_date:
+            if start_date >= end_date:
+                raise serializers.ValidationError(
+                    {"end_date": "end_date must be greater than start_date and cannot be the same day."}
+                )
+
+        return attrs
