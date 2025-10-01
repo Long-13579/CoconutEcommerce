@@ -40,6 +40,7 @@ function ProductsInventory() {
                     const data = await response.json();
                     setOrders(data);
 
+
                 } else {
                     const text = await response.text();
                     setError("API returned HTML: " + text.substring(0, 200));
