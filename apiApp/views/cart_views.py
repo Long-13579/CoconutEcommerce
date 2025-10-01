@@ -49,7 +49,7 @@ def get_cart(request):
     if cart:
         serializer = CartSerializer(cart)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response({"error": "Cart not found."}, status=status.HTTP_404_NOT_FOUND)
+    return Response([])
 
 
 @api_view(['GET'])

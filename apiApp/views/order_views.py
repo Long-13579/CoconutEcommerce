@@ -7,21 +7,25 @@ import requests
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from ..models import Cart, Order, OrderItem
+from ..models import Cart, Order, OrderItem, CustomUser
 from ..serializers import OrderSerializer, OrderItemSerializer
+from ..utils.token_decode import get_user_id_from_request
 
 @api_view(['GET'])
 def get_orders(request):
-    email = request.query_params.get("email")
+    user_id = get_user_id_from_request(request)
+    user = CustomUser.objects.get(id=user_id)
+    email = user.email
     orders = Order.objects.filter(customer_email=email)
     serializer = OrderSerializer(orders, many=True)
     return Response(serializer.data)
 
 @api_view(['POST'])
 def create_checkout_session(request):
-    cart_code = request.data.get("cart_code")
-    email = request.data.get("email")
-    cart = Cart.objects.get(cart_code=cart_code)
+    user_id = get_user_id_from_request(request)
+    user = CustomUser.objects.get(id=user_id)
+    email = user.email
+    cart = Cart.objects.get(user_id=user_id)
     cartItems = cart.cartitems.all()
 
     total_amount = 0
@@ -30,7 +34,7 @@ def create_checkout_session(request):
 
     total_amount *= 26000
 
-    json_str = json.dumps({"cart_code": cart_code, "email": email})
+    json_str = json.dumps({"email": email})
     base64_bytes = base64.b64encode(json_str.encode("utf-8"))
     base64_extra_data = base64_bytes.decode("utf-8")
 
@@ -86,6 +90,7 @@ def create_checkout_session(request):
 
 @api_view(['GET'])
 def finish_checkout(request):
+  user_id = get_user_id_from_request(request)
   result_code = request.GET.get("resultCode")
   if (int(result_code) != 0):
     return Response(status=204)
@@ -95,7 +100,6 @@ def finish_checkout(request):
   decoded_str = decoded_bytes.decode("utf-8")              
   decoded_json = json.loads(decoded_str)
 
-  cart_code = int(decoded_json["cart_code"])
   amount = int(request.GET.get("amount"))
   currency = "VND"
   email = decoded_json["email"]
@@ -108,11 +112,11 @@ def finish_checkout(request):
     'customer_email': email,
   }
 
-  fulfill_checkout(session, cart_code)
+  fulfill_checkout(session, user_id)
 
   return Response(status=200)
 
-def fulfill_checkout(session, cart_code):
+def fulfill_checkout(session, user_id):
     
     order = Order.objects.create(stripe_checkout_id=session["id"],
         amount=session["amount_total"],
@@ -120,7 +124,7 @@ def fulfill_checkout(session, cart_code):
         customer_email=session["customer_email"],
         status="Paid")
 
-    cart = Cart.objects.get(cart_code=cart_code)
+    cart = Cart.objects.get(user_id=user_id)
     cartitems = cart.cartitems.all()
 
     for item in cartitems:
