@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import Icon from "../components/Icon";
 import PageTitle from "../components/Typography/PageTitle";
@@ -22,11 +22,76 @@ const FormTitle = ({ children }) => {
 };
 
 const AddProduct = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price: "",
+    slug: "",
+    image: null,
+    featured: false,
+    category: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value, type, checked, files } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : type === "file"
+          ? files[0]
+          : value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const data = new FormData();
+      data.append("name", formData.name);
+      data.append("description", formData.description);
+      data.append("price", formData.price);
+      data.append("slug", formData.slug);
+      if (formData.image) {
+        data.append("image", formData.image);
+      }
+      data.append("featured", formData.featured ? "true" : "false");
+      data.append("category", formData.category);
+
+      const res = await fetch("http://127.0.0.1:8000/products/create", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!res.ok) throw new Error("Failed to create product");
+
+      const result = await res.json();
+      alert("✅ Product created successfully!");
+      console.log(result);
+
+      // reset form
+      setFormData({
+        name: "",
+        description: "",
+        price: "",
+        slug: "",
+        image: null,
+        featured: false,
+        category: "",
+      });
+    } catch (err) {
+      console.error("❌ Error creating product:", err);
+      alert("❌ Failed to create product. Check console for details.");
+    }
+  };
+
   return (
     <div>
       <PageTitle>Add New Product</PageTitle>
 
-      {/* Breadcum */}
+      {/* Breadcrumb */}
       <div className="flex text-gray-800 dark:text-gray-300">
         <div className="flex items-center text-purple-600">
           <Icon className="w-5 h-5" aria-hidden="true" icon={HomeIcon} />
@@ -38,59 +103,88 @@ const AddProduct = () => {
         <p className="mx-2">Add new Product</p>
       </div>
 
-      <div className="w-full mt-8 grid gap-4 grid-col md:grid-cols-3 ">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full mt-8 grid gap-4 grid-col md:grid-cols-3"
+      >
+        {/* Card trái */}
         <Card className="row-span-2 md:col-span-2">
           <CardBody>
-            <FormTitle>Product Image</FormTitle>
-            <input
-              type="file"
-              className="mb-4 text-gray-800 dark:text-gray-300"
-            />
-
             <FormTitle>Product Name</FormTitle>
             <Label>
-              <Input className="mb-4" placeholder="Type product name here" />
+              <Input
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="mb-4"
+                placeholder="Type product name here"
+              />
+            </Label>
+
+            <FormTitle>Description</FormTitle>
+            <Label>
+              <Textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                className="mb-4"
+                rows="4"
+                placeholder="Enter product description here"
+              />
             </Label>
 
             <FormTitle>Product Price</FormTitle>
             <Label>
-              <Input className="mb-4" placeholder="Enter product price here" />
-            </Label>
-
-            <FormTitle>Short description</FormTitle>
-            <Label>
-              <Textarea
+              <Input
+                type="number"
+                step="0.01"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
                 className="mb-4"
-                rows="3"
-                placeholder="Enter product short description here"
+                placeholder="Enter product price here"
               />
             </Label>
 
-            <FormTitle>Stock Qunatity</FormTitle>
+            <FormTitle>Slug</FormTitle>
             <Label>
               <Input
+                name="slug"
+                value={formData.slug}
+                onChange={handleChange}
                 className="mb-4"
-                placeholder="Enter product stock quantity"
+                placeholder="Auto-generated if left empty"
               />
             </Label>
 
-            <FormTitle>Full description</FormTitle>
-            <Label>
-              <Textarea
-                className="mb-4"
-                rows="5"
-                placeholder="Enter product full description here"
+            <FormTitle>Product Image</FormTitle>
+            <input
+              type="file"
+              name="image"
+              onChange={handleChange}
+              className="mb-4 text-gray-800 dark:text-gray-300"
+            />
+
+            <FormTitle>Featured</FormTitle>
+            <Label className="flex items-center space-x-2 mb-4">
+              <Input
+                type="checkbox"
+                name="featured"
+                checked={formData.featured}
+                onChange={handleChange}
               />
+              <span>Mark as Featured</span>
             </Label>
 
             <div className="w-full">
-              <Button size="large" iconLeft={AddIcon}>
+              <Button type="submit" size="large" iconLeft={AddIcon}>
                 Add Product
               </Button>
             </div>
           </CardBody>
         </Card>
 
+        {/* Card phải */}
         <Card className="h-48">
           <CardBody>
             <div className="flex mb-8">
@@ -103,16 +197,22 @@ const AddProduct = () => {
             </div>
             <Label className="mt-4">
               <FormTitle>Select Product Category</FormTitle>
-              <Select className="mt-1">
-                <option>Electronic</option>
-                <option>Fashion</option>
-                <option>Cosmatics</option>
-                <option>Food and Meal</option>
+              <Select
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className="mt-1"
+              >
+                <option value="">-- Select Category --</option>
+                <option value="1">Oils & Extracts</option>
+                <option value="2">Kitchenware</option>
+                <option value="3">Snacks</option>
+                <option value="4">Personal Care</option>
               </Select>
             </Label>
           </CardBody>
         </Card>
-      </div>
+      </form>
     </div>
   );
 };
