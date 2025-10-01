@@ -94,15 +94,11 @@ def finish_checkout(request):
   result_code = request.GET.get("resultCode")
   if (int(result_code) != 0):
     return Response(status=204)
-  
-  extra_data = request.GET.get("extraData")
-  decoded_bytes = base64.b64decode(extra_data)         
-  decoded_str = decoded_bytes.decode("utf-8")              
-  decoded_json = json.loads(decoded_str)
 
   amount = int(request.GET.get("amount"))
   currency = "VND"
-  email = decoded_json["email"]
+  user = CustomUser.objects.get(id=user_id)
+  email = user.email
   id = request.GET.get("transId")
 
   session = {
