@@ -20,6 +20,7 @@ def update_order_status(request, order_id):
     order.status = new_status
     order.save()
 
+
     # If status is changed to 'Pending from Delivery', create Delivery record if not exists
     if new_status == "Pending from Delivery":
         from ..models.delivery import Delivery

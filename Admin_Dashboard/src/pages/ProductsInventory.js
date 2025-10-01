@@ -39,6 +39,7 @@ function ProductsInventory() {
                 if (contentType && contentType.indexOf("application/json") !== -1) {
                     const data = await response.json();
                     setOrders(data);
+
                 } else {
                     const text = await response.text();
                     setError("API returned HTML: " + text.substring(0, 200));
