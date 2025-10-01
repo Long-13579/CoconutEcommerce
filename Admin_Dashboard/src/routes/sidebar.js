@@ -38,6 +38,10 @@ const routes = [
         path: "/add-product",
         name: "Add Product",
       },
+      {
+        path: "/app/inventory-check",
+        name: "Inventory Check",
+      },
     ],
   },
   {

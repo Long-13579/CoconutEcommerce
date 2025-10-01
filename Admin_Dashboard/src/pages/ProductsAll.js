@@ -48,7 +48,7 @@ const ProductsAll = () => {
   }
 
   useEffect(() => {
-    fetch("http://localhost:8000/products/list")
+    fetch("http://localhost:8000/api/products/list/")
       .then(res => res.json())
       .then(products => {
         setTotalResults(products.length);

@@ -1,8 +1,31 @@
 
+
 import React, { useEffect, useState } from "react";
 import PageTitle from "../components/Typography/PageTitle";
 
+// Update order status via API
+async function updateOrderStatus(orderId, newStatus) {
+    const response = await fetch(`http://localhost:8000/api/order/${orderId}/update_status/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+    });
+    if (response.ok) {
+        window.location.reload();
+    } else {
+        alert("Failed to update order status.");
+    }
+}
+
 function Delivery() {
+    const STATUS_COLORS = {
+        Paid: "bg-green-500 text-white",
+        "Pending from Inventory": "bg-yellow-400 text-black",
+        "Pending from Delivery": "bg-blue-400 text-white",
+        Shipping: "bg-blue-500 text-white",
+        Completed: "bg-green-700 text-white",
+        Cancelled: "bg-red-500 text-white",
+    };
     const [deliveries, setDeliveries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -12,15 +35,18 @@ function Delivery() {
             setLoading(true);
             setError(null);
             try {
-                // Use trailing slash for Django API endpoint
-                const response = await fetch("/api/delivery/get_deliveries/");
+                const response = await fetch("http://localhost:8000/api/delivery/get_deliveries/");
                 const contentType = response.headers.get("content-type");
-                if (!response.ok) throw new Error("Failed to fetch deliveries");
+                if (!response.ok) {
+                    const text = await response.text();
+                    setError("API error: " + text.substring(0, 100));
+                    return;
+                }
                 if (contentType && contentType.indexOf("application/json") !== -1) {
                     const data = await response.json();
-                    setDeliveries(data);
+                    // Only show deliveries with order status Pending from Delivery or Shipping
+                    setDeliveries(data.filter(d => d.order && (d.order.status === "Pending from Delivery" || d.order.status === "Shipping")));
                 } else {
-                    // If response is HTML, show error
                     const text = await response.text();
                     setError("API returned HTML: " + text.substring(0, 100));
                 }
@@ -32,6 +58,26 @@ function Delivery() {
         }
         fetchDeliveries();
     }, []);
+
+    // Assign delivery staff (for demo, just assign current user)
+    // Sample shipper list
+    const sampleShippers = [
+        { email: "shipper1@example.com", name: "Shipper One" },
+        { email: "shipper2@example.com", name: "Shipper Two" },
+        { email: "shipper3@example.com", name: "Shipper Three" },
+    ];
+
+    async function assignDelivery(deliveryId, userEmail) {
+        // Assign shipper, no error check needed for demo
+        await fetch(`http://localhost:8000/api/delivery/${deliveryId}/update/`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ assigned_to: userEmail }),
+        });
+        window.location.reload();
+    }
+
+    // Tracking info button removed as requested
 
     return (
         <div className="w-full flex flex-col flex-grow">
@@ -52,12 +98,13 @@ function Delivery() {
                                     <th className="px-4 py-2">Status</th>
                                     <th className="px-4 py-2">Assigned To</th>
                                     <th className="px-4 py-2">Created At</th>
+                                    <th className="px-4 py-2">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {deliveries.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="text-center py-4">No deliveries found.</td>
+                                        <td colSpan={6} className="text-center py-4">No deliveries found.</td>
                                     </tr>
                                 ) : (
                                     deliveries.map((delivery) => (
@@ -66,7 +113,7 @@ function Delivery() {
                                             <td className="border px-4 py-2">
                                                 {delivery.order && delivery.order.stripe_checkout_id ? (
                                                     <span>
-                                                        #{delivery.order.id} - {delivery.order.stripe_checkout_id} ({delivery.order.status})
+                                                        #{delivery.order.id} - {delivery.order.stripe_checkout_id} <span className={`ml-2 px-2 py-1 rounded ${STATUS_COLORS[delivery.order.status] || "bg-gray-300"}`}>{delivery.order.status}</span>
                                                     </span>
                                                 ) : (
                                                     <span className="text-gray-400 italic">No order</span>
@@ -74,13 +121,35 @@ function Delivery() {
                                             </td>
                                             <td className="border px-4 py-2">{delivery.status}</td>
                                             <td className="border px-4 py-2">
-                                                {delivery.assigned_to && delivery.assigned_to.email ? (
-                                                    <span>{delivery.assigned_to.email}</span>
-                                                ) : (
-                                                    <span className="text-gray-400 italic">Unassigned</span>
-                                                )}
+                                                <select
+                                                    className="px-2 py-1 rounded border"
+                                                    value={delivery.assigned_to && delivery.assigned_to.email ? delivery.assigned_to.email : ""}
+                                                    onChange={e => assignDelivery(delivery.id, e.target.value)}
+                                                >
+                                                    <option value="" disabled>Select Shipper</option>
+                                                    {sampleShippers.map(shipper => (
+                                                        <option key={shipper.email} value={shipper.email}>{shipper.name}</option>
+                                                    ))}
+                                                </select>
                                             </td>
                                             <td className="border px-4 py-2">{delivery.created_at}</td>
+                                            <td className="border px-4 py-2">
+                                                {/* Show Start Shipping only if shipper is assigned and status is Pending from Delivery */}
+                                                {delivery.order && delivery.order.status === "Pending from Delivery" && delivery.assigned_to && delivery.assigned_to.email && (
+                                                    <button className="bg-blue-500 text-white px-2 py-1 rounded mr-2" onClick={() => updateOrderStatus(delivery.order.id, "Shipping")}>Start Shipping</button>
+                                                )}
+                                                {/* Complete Delivery button: shipper marks as delivered */}
+                                                {delivery.order && delivery.order.status === "Shipping" && (
+                                                    <button className="bg-green-700 text-white px-2 py-1 rounded mr-2" onClick={() => updateOrderStatus(delivery.order.id, "Completed")}>Successful Delivery</button>
+                                                )}
+                                                {/* Completed/Cancelled status */}
+                                                {delivery.order && delivery.order.status === "Completed" && (
+                                                    <button className="bg-gray-400 text-white px-2 py-1 rounded" disabled>Order Completed</button>
+                                                )}
+                                                {delivery.order && delivery.order.status === "Cancelled" && (
+                                                    <button className="bg-red-500 text-white px-2 py-1 rounded" disabled>Order Cancelled</button>
+                                                )}
+                                            </td>
                                         </tr>
                                     ))
                                 )}

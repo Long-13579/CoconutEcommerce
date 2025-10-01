@@ -29,7 +29,8 @@ class ProductListSerializer(serializers.ModelSerializer):
         return obj.description if obj.description else ""
 
     def get_qty(self, obj):
-        return 100
+        # Return actual quantity from DB
+        return getattr(obj, 'quantity', 0)
 
     def get_rating(self, obj):
         return 5.0

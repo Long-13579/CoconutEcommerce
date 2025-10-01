@@ -12,10 +12,13 @@ from ..serializers import OrderSerializer, OrderItemSerializer
 
 @api_view(['GET'])
 def get_orders(request):
-    email = request.query_params.get("email")
+  email = request.query_params.get("email")
+  if email:
     orders = Order.objects.filter(customer_email=email)
-    serializer = OrderSerializer(orders, many=True)
-    return Response(serializer.data)
+  else:
+    orders = Order.objects.all()
+  serializer = OrderSerializer(orders, many=True)
+  return Response(serializer.data)
 
 @api_view(['POST'])
 def create_checkout_session(request):

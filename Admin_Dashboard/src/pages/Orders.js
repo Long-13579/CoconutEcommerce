@@ -4,27 +4,37 @@ import PageTitle from "../components/Typography/PageTitle";
 import { Card, CardBody, Label, Select, Input, Button } from "@windmill/react-ui";
 import { NavLink } from "react-router-dom";
 
+// Hàm cập nhật trạng thái đơn hàng
+async function updateStatus(orderId, newStatus) {
+  const response = await fetch(`http://localhost:8000/api/order/${orderId}/update_status/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status: newStatus }),
+  });
+  if (response.ok) {
+    window.location.reload();
+  } else {
+    alert("Cập nhật trạng thái thất bại!");
+  }
+}
+
 const STATUS_COLORS = {
   Paid: "bg-green-500 text-white",
-  "Awaiting Confirmation": "bg-green-400 text-white",
-  Processing: "bg-yellow-400 text-black",
+  "Pending from Inventory": "bg-yellow-400 text-black",
+  "Pending from Delivery": "bg-blue-400 text-white",
   Shipping: "bg-blue-500 text-white",
   Completed: "bg-green-700 text-white",
   Cancelled: "bg-red-500 text-white",
-  Returned: "bg-red-400 text-black",
-  Disputed: "bg-red-700 text-white",
 };
 
 const statusOptions = [
   "All",
   "Paid",
-  "Awaiting Confirmation",
-  "Processing",
+  "Pending from Inventory",
+  "Pending from Delivery",
   "Shipping",
   "Completed",
   "Cancelled",
-  "Returned",
-  "Disputed",
 ];
 
 function Orders() {
@@ -41,11 +51,20 @@ function Orders() {
       setLoading(true);
       setError(null);
       try {
-        // Replace with your actual API endpoint
-        const response = await fetch("/api/order/get_orders/");
-        if (!response.ok) throw new Error("Failed to fetch orders");
-        const data = await response.json();
-        setOrders(data);
+        const response = await fetch("http://localhost:8000/api/order/get_orders/");
+        const contentType = response.headers.get("content-type");
+        if (!response.ok) {
+          const text = await response.text();
+          setError("API error: " + text.substring(0, 200));
+          return;
+        }
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const data = await response.json();
+          setOrders(data);
+        } else {
+          const text = await response.text();
+          setError("API returned HTML: " + text.substring(0, 200));
+        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -136,8 +155,35 @@ function Orders() {
                   <td className={`border px-4 py-2 font-bold rounded ${STATUS_COLORS[order.status] || "bg-gray-300"}`}>{order.status}</td>
                   <td className="border px-4 py-2">{order.created_at}</td>
                   <td className="border px-4 py-2">
-                    <NavLink to={`/orders/${order.id}`} className="text-blue-600 underline mr-2">View</NavLink>
-                    {/* Add more action buttons here based on role and status */}
+                    <NavLink to={`/orders/${order.id}`} className="text-blue-600 underline mr-2">Xem chi tiết</NavLink>
+                    {/* Action buttons for each status and role */}
+                    {/* Sale Staff/Admin: Paid */}
+                    {order.status === "Paid" && (
+                      <>
+                        <Button size="small" className="mr-2 bg-yellow-400 text-black" onClick={() => updateStatus(order.id, "Pending from Inventory")}>Send to Inventory</Button>
+                        <Button size="small" className="mr-2 bg-red-500 text-white" onClick={() => updateStatus(order.id, "Cancelled")}>Cancel Order</Button>
+                      </>
+                    )}
+                    {/* Inventory Staff/Admin: Pending from Inventory */}
+                    {order.status === "Pending from Inventory" && (
+                      <Button size="small" className="mr-2 bg-blue-400 text-white" onClick={() => updateStatus(order.id, "Pending from Delivery")}>Send to Delivery</Button>
+                    )}
+                    {/* Delivery Staff/Admin: Pending from Delivery */}
+                    {order.status === "Pending from Delivery" && (
+                      <Button size="small" className="mr-2 bg-blue-500 text-white" onClick={() => updateStatus(order.id, "Shipping")}>Start Shipping</Button>
+                    )}
+                    {/* Delivery Staff/Admin: Shipping - button disabled in Orders page */}
+                    {order.status === "Shipping" && (
+                      <Button size="small" className="mr-2 bg-green-700 text-white" disabled>Complete Delivery</Button>
+                    )}
+                    {/* Admin: Completed */}
+                    {order.status === "Completed" && (
+                      <Button size="small" className="mr-2 bg-red-500 text-white" disabled>Order Completed</Button>
+                    )}
+                    {/* Admin: Cancelled */}
+                    {order.status === "Cancelled" && (
+                      <Button size="small" className="mr-2 bg-gray-400 text-white" disabled>Order Cancelled</Button>
+                    )}
                   </td>
                 </tr>
               ))
