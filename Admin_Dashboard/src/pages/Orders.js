@@ -155,7 +155,7 @@ function Orders() {
                   <td className={`border px-4 py-2 font-bold rounded ${STATUS_COLORS[order.status] || "bg-gray-300"}`}>{order.status}</td>
                   <td className="border px-4 py-2">{order.created_at}</td>
                   <td className="border px-4 py-2">
-                    <NavLink to={`/orders/${order.id}`} className="text-blue-600 underline mr-2">Xem chi tiết</NavLink>
+                    <NavLink to={`/orders/${order.id}`} className="text-blue-600 underline mr-2">Details</NavLink>
                     {/* Action buttons for each status and role */}
                     {/* Paid: show actions for Sale Staff/Admin */}
                     {order.status === "Paid" && (

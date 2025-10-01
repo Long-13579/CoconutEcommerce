@@ -19,5 +19,5 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = [
-            "id", "stripe_checkout_id", "amount", "currency", "customer_email", "status", "created_at", "items"
+            "id", "checkout_id", "amount", "currency", "customer_email", "status", "created_at", "items"
         ]

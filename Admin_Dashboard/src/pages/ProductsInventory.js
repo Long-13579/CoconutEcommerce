@@ -19,6 +19,7 @@ async function updateOrderStatus(orderId, newStatus) {
 
 function ProductsInventory() {
     const [orders, setOrders] = useState([]);
+    const [activeTab, setActiveTab] = useState("pending");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -37,8 +38,7 @@ function ProductsInventory() {
                 }
                 if (contentType && contentType.indexOf("application/json") !== -1) {
                     const data = await response.json();
-                    // Only show orders with status 'Pending from Inventory'
-                    setOrders(data.filter(order => order.status === "Pending from Inventory"));
+                    setOrders(data);
                 } else {
                     const text = await response.text();
                     setError("API returned HTML: " + text.substring(0, 200));
@@ -57,12 +57,22 @@ function ProductsInventory() {
             <PageTitle>Inventory Check</PageTitle>
             <Card className="mb-6">
                 <CardBody>
+                    <div className="mb-4 flex gap-2">
+                        <button
+                            className={`px-4 py-2 rounded ${activeTab === "pending" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+                            onClick={() => setActiveTab("pending")}
+                        >Processing</button>
+                        <button
+                            className={`px-4 py-2 rounded ${activeTab === "processed" ? "bg-green-700 text-white" : "bg-gray-200"}`}
+                            onClick={() => setActiveTab("processed")}
+                        >Completed</button>
+                    </div>
                     {loading ? (
                         <div>Loading...</div>
                     ) : error ? (
                         <div className="text-red-600">{error}</div>
                     ) : orders.length === 0 ? (
-                        <div>No orders pending inventory check.</div>
+                        <div>No orders found.</div>
                     ) : (
                         <table className="min-w-full table-auto bg-white rounded shadow">
                             <thead>
@@ -74,29 +84,37 @@ function ProductsInventory() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {orders.map(order => (
-                                    <tr key={order.id}>
-                                        <td className="border px-4 py-2">{order.id}</td>
-                                        <td className="border px-4 py-2">{order.customer_email}</td>
-                                        <td className="border px-4 py-2">
-                                            <ul>
-                                                {order.items.map(item => (
-                                                    <li key={item.id}>
-                                                        {item.product.name} (Qty: {item.quantity})
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </td>
-                                        <td className="border px-4 py-2">
-                                            {order.status === "Pending from Inventory" && (
-                                                <>
-                                                    <Button size="small" className="mr-2 bg-blue-400 text-white" onClick={() => updateOrderStatus(order.id, "Pending from Delivery")}>Packed</Button>
-                                                    <Button size="small" className="bg-red-500 text-white" onClick={() => updateOrderStatus(order.id, "Cancelled")}>Out of Stock</Button>
-                                                </>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {orders
+                                    .filter(order => {
+                                        if (activeTab === "pending") {
+                                            return order.status === "Pending from Inventory";
+                                        } else {
+                                            return ["Pending from Delivery", "Shipping", "Completed", "Cancelled"].includes(order.status);
+                                        }
+                                    })
+                                    .map(order => (
+                                        <tr key={order.id}>
+                                            <td className="border px-4 py-2">{order.id}</td>
+                                            <td className="border px-4 py-2">{order.customer_email}</td>
+                                            <td className="border px-4 py-2">
+                                                <ul>
+                                                    {order.items.map(item => (
+                                                        <li key={item.id}>
+                                                            {item.product.name} (Qty: {item.quantity})
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </td>
+                                            <td className="border px-4 py-2">
+                                                {order.status === "Pending from Inventory" && (
+                                                    <>
+                                                        <Button size="small" className="mr-2 bg-blue-400 text-white" onClick={() => updateOrderStatus(order.id, "Pending from Delivery")}>Packed</Button>
+                                                        <Button size="small" className="bg-red-500 text-white" onClick={() => updateOrderStatus(order.id, "Cancelled")}>Out of Stock</Button>
+                                                    </>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
                             </tbody>
                         </table>
                     )}

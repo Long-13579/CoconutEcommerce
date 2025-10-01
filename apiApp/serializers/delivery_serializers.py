@@ -11,7 +11,7 @@ class DeliverySerializer(serializers.ModelSerializer):
         if obj.order:
             return {
                 "id": obj.order.id,
-                "stripe_checkout_id": getattr(obj.order, "stripe_checkout_id", None),
+                "checkout_id": getattr(obj.order, "checkout_id", None),
                 "amount": getattr(obj.order, "amount", None),
                 "status": getattr(obj.order, "status", None),
             }

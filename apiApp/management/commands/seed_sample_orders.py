@@ -24,11 +24,11 @@ class Command(BaseCommand):
         for i in range(5):
             email = random.choice(emails)
             order = Order.objects.create(
-                stripe_checkout_id=f'ORDER_{i+1}_TEST',
+                checkout_id=f'ORDER_{i+1}_TEST',
                 amount=random.randint(100, 1000),
                 currency='VND',
                 customer_email=email,
-                status=random.choice(['Paid', 'Pending']),
+                status=random.choice(['Paid', 'Pending from Inventory']),
                 created_at=timezone.now()
             )
             # Add order items
