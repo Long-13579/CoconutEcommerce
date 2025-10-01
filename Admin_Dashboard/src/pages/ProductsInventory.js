@@ -88,8 +88,12 @@ function ProductsInventory() {
                                             </ul>
                                         </td>
                                         <td className="border px-4 py-2">
-                                            <Button size="small" className="mr-2 bg-blue-400 text-white" onClick={() => updateOrderStatus(order.id, "Pending from Delivery")}>Packed</Button>
-                                            <Button size="small" className="bg-red-500 text-white" onClick={() => updateOrderStatus(order.id, "Cancelled")}>Out of Stock</Button>
+                                            {order.status === "Pending from Inventory" && (
+                                                <>
+                                                    <Button size="small" className="mr-2 bg-blue-400 text-white" onClick={() => updateOrderStatus(order.id, "Pending from Delivery")}>Packed</Button>
+                                                    <Button size="small" className="bg-red-500 text-white" onClick={() => updateOrderStatus(order.id, "Cancelled")}>Out of Stock</Button>
+                                                </>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

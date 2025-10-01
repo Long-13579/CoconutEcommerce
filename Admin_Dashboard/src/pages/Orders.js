@@ -157,30 +157,24 @@ function Orders() {
                   <td className="border px-4 py-2">
                     <NavLink to={`/orders/${order.id}`} className="text-blue-600 underline mr-2">Xem chi tiết</NavLink>
                     {/* Action buttons for each status and role */}
-                    {/* Sale Staff/Admin: Paid */}
+                    {/* Paid: show actions for Sale Staff/Admin */}
                     {order.status === "Paid" && (
                       <>
                         <Button size="small" className="mr-2 bg-yellow-400 text-black" onClick={() => updateStatus(order.id, "Pending from Inventory")}>Send to Inventory</Button>
                         <Button size="small" className="mr-2 bg-red-500 text-white" onClick={() => updateStatus(order.id, "Cancelled")}>Cancel Order</Button>
                       </>
                     )}
-                    {/* Inventory Staff/Admin: Pending from Inventory */}
-                    {order.status === "Pending from Inventory" && (
-                      <Button size="small" className="mr-2 bg-blue-400 text-white" onClick={() => updateStatus(order.id, "Pending from Delivery")}>Send to Delivery</Button>
-                    )}
-                    {/* Delivery Staff/Admin: Pending from Delivery */}
-                    {order.status === "Pending from Delivery" && (
-                      <Button size="small" className="mr-2 bg-blue-500 text-white" onClick={() => updateStatus(order.id, "Shipping")}>Start Shipping</Button>
-                    )}
-                    {/* Delivery Staff/Admin: Shipping - button disabled in Orders page */}
-                    {order.status === "Shipping" && (
-                      <Button size="small" className="mr-2 bg-green-700 text-white" disabled>Complete Delivery</Button>
-                    )}
-                    {/* Admin: Completed */}
+                    {/* Pending from Inventory: no actions for Orders page */}
+                    {order.status === "Pending from Inventory" && null}
+                    {/* Pending from Delivery: no actions for Orders page */}
+                    {order.status === "Pending from Delivery" && null}
+                    {/* Shipping: no actions for Orders page */}
+                    {order.status === "Shipping" && null}
+                    {/* Completed: disabled button */}
                     {order.status === "Completed" && (
                       <Button size="small" className="mr-2 bg-red-500 text-white" disabled>Order Completed</Button>
                     )}
-                    {/* Admin: Cancelled */}
+                    {/* Cancelled: disabled button */}
                     {order.status === "Cancelled" && (
                       <Button size="small" className="mr-2 bg-gray-400 text-white" disabled>Order Cancelled</Button>
                     )}
