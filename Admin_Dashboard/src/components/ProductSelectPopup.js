@@ -43,17 +43,17 @@ const ProductSelectPopup = ({ open, onClose, onSelect, selectedIds, discountId }
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
       <div className="bg-white rounded shadow-lg p-6 pr-10 w-full max-w-md relative">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold">Chọn sản phẩm để thêm</h2>
+            <h2 className="text-lg font-bold">Select products to add</h2>
             <button
               className="text-2xl text-gray-500 hover:text-gray-700 ml-4"
               onClick={onClose}
-              aria-label="Đóng"
+              aria-label="Close"
             >
               ×
             </button>
           </div>
         {loading ? (
-          <div>Đang tải danh sách sản phẩm...</div>
+          <div>Loading product list...</div>
         ) : (
           <>
             <ul className="max-h-64 overflow-y-auto mb-4">
@@ -69,7 +69,7 @@ const ProductSelectPopup = ({ open, onClose, onSelect, selectedIds, discountId }
                     <span>{p.name}</span>
                   </label>
                   {selectedIds.includes(p.id) && (
-                    <span className="text-xs text-green-600 font-semibold">Đã thêm</span>
+                    <span className="text-xs text-green-600 font-semibold">Added</span>
                   )}
                 </li>
               ))}
@@ -80,14 +80,14 @@ const ProductSelectPopup = ({ open, onClose, onSelect, selectedIds, discountId }
                 onClick={onClose}
                 disabled={saving}
               >
-                Hủy
+                Cancel
               </button>
               <button
                 className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
                 onClick={handleSave}
                 disabled={selected.length === 0}
               >
-                Lưu
+                Save
               </button>
             </div>
           </>

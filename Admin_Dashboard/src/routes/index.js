@@ -16,6 +16,7 @@ const Blank = lazy(() => import("../pages/Blank"));
 const OrderDetail = lazy(() => import("../pages/OrderDetail"))
 const Discounts = lazy(() => import("../pages/Discounts"));
 const DiscountDetail = lazy(() => import("../pages/DiscountDetail"));
+const AddDiscount = lazy(() => import("../pages/AddDiscount"))
 
 /**
  * ⚠ These are internal routes!
@@ -31,6 +32,10 @@ const routes = [
   {
     path: "/app/inventory-check",
     component: lazy(() => import("../pages/ProductsInventory")),
+  },
+  {
+    path: "/discounts/create",
+    component: AddDiscount
   },
   {
     path: "/discounts/:id",
