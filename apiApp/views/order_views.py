@@ -13,12 +13,15 @@ from ..utils.token_decode import get_user_id_from_request
 
 @api_view(['GET'])
 def get_orders(request):
-    user_id = get_user_id_from_request(request)
+  user_id = get_user_id_from_request(request)
+  try:
     user = CustomUser.objects.get(id=user_id)
-    email = user.email
-    orders = Order.objects.filter(customer_email=email)
-    serializer = OrderSerializer(orders, many=True)
-    return Response(serializer.data)
+  except CustomUser.DoesNotExist:
+    return Response({"error": "User not found"}, status=404)
+  email = user.email
+  orders = Order.objects.filter(customer_email=email)
+  serializer = OrderSerializer(orders, many=True)
+  return Response(serializer.data)
 
 @api_view(['POST'])
 def create_checkout_session(request):
