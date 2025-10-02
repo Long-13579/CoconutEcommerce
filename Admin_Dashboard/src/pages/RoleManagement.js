@@ -36,38 +36,42 @@ function RoleManagement() {
             .then(res => res.json())
             .then(data => {
                 let perms = Array.isArray(data) ? data : [];
-                // Nếu backend trả về rỗng, thêm ví dụ permission mẫu
-                if (perms.length === 0) {
-                    perms = [
-                        { id: 1, name: "orders.view" },
-                        { id: 2, name: "orders.edit" },
-                        { id: 3, name: "products.manage" },
-                        { id: 4, name: "customers.view" },
-                        { id: 5, name: "reports.view" },
-                        { id: 6, name: "users.manage" },
-                        { id: 7, name: "rbac.manage" },
-                        { id: 8, name: "orders.assign" },
-                        { id: 9, name: "products.view" },
-                        { id: 10, name: "dashboard.view" }
-                    ];
-                }
-                setPermissions(perms);
+                // Group permissions by domain for better UI
+                const grouped = {
+                    Orders: [],
+                    Products: [],
+                    Customers: [],
+                    Tickets: [],
+                    Delivery: [],
+                    Inventory: [],
+                    Users: [],
+                    Other: [],
+                };
+                perms.forEach(p => {
+                    if (p.name.startsWith("orders.")) grouped.Orders.push(p);
+                    else if (p.name.startsWith("products.")) grouped.Products.push(p);
+                    else if (p.name.startsWith("customers.")) grouped.Customers.push(p);
+                    else if (p.name.startsWith("tickets.")) grouped.Tickets.push(p);
+                    else if (p.name.startsWith("delivery.")) grouped.Delivery.push(p);
+                    else if (p.name.startsWith("inventory.")) grouped.Inventory.push(p);
+                    else if (p.name.startsWith("users.")) grouped.Users.push(p);
+                    else grouped.Other.push(p);
+                });
+                setPermissions(grouped);
             })
             .catch((err) => {
                 console.error("Error fetching permissions:", err);
                 // Nếu lỗi, vẫn hiển thị permission mẫu
-                setPermissions([
-                    { id: 1, name: "orders.view" },
-                    { id: 2, name: "orders.edit" },
-                    { id: 3, name: "products.manage" },
-                    { id: 4, name: "customers.view" },
-                    { id: 5, name: "reports.view" },
-                    { id: 6, name: "users.manage" },
-                    { id: 7, name: "rbac.manage" },
-                    { id: 8, name: "orders.assign" },
-                    { id: 9, name: "products.view" },
-                    { id: 10, name: "dashboard.view" }
-                ]);
+                setPermissions({
+                    Orders: [{ id: 1, name: "orders.view" }, { id: 2, name: "orders.edit" }, { id: 8, name: "orders.assign" }, { id: 11, name: "orders.update_status" }],
+                    Products: [{ id: 3, name: "products.manage" }, { id: 9, name: "products.view" }, { id: 12, name: "products.create" }, { id: 13, name: "products.delete" }, { id: 14, name: "products.update" }],
+                    Customers: [{ id: 4, name: "customers.view" }],
+                    Tickets: [{ id: 15, name: "tickets.create" }, { id: 16, name: "tickets.update" }, { id: 17, name: "tickets.close" }],
+                    Delivery: [{ id: 18, name: "delivery.view" }, { id: 19, name: "delivery.manage" }],
+                    Inventory: [{ id: 20, name: "inventory.manage" }],
+                    Users: [{ id: 6, name: "users.manage" }],
+                    Other: [{ id: 5, name: "rbac.manage" }, { id: 7, name: "chat.access" }, { id: 10, name: "dashboard.view" }, { id: 21, name: "returns.process" }, { id: 22, name: "payments.view" }, { id: 23, name: "payments.verify" }, { id: 24, name: "payments.refund" }],
+                });
             });
     }, []);
 
@@ -166,20 +170,31 @@ function RoleManagement() {
                             placeholder="Enter role name"
                         />
                         <label className="block mb-2 font-semibold">Permissions</label>
-                        <div className="grid grid-cols-2 gap-2 mb-4">
-                            {permissions.length === 0 ? (
+                        <div className="mb-4">
+                            {Object.keys(permissions).length === 0 ? (
                                 <span className="text-gray-400 italic">No permissions available</span>
-                            ) : permissions.map((perm) => (
-                                <label key={perm.id} className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedPermissionIds.includes(perm.id)}
-                                        onChange={() => handlePermissionChange(perm.id)}
-                                        className="mr-2"
-                                    />
-                                    <span>{perm.name}</span>
-                                </label>
-                            ))}
+                            ) : (
+                                Object.entries(permissions).map(([group, perms]) => (
+                                    perms.length > 0 && (
+                                        <div key={group} className="mb-2">
+                                            <div className="font-bold text-purple-700 mb-1">{group}</div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {perms.map((perm) => (
+                                                    <label key={perm.id} className="flex items-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedPermissionIds.includes(perm.id)}
+                                                            onChange={() => handlePermissionChange(perm.id)}
+                                                            className="mr-2"
+                                                        />
+                                                        <span>{perm.name}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )
+                                ))
+                            )}
                         </div>
                         <button
                             type="submit"

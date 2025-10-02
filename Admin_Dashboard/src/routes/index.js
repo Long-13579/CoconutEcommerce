@@ -26,6 +26,10 @@ const Blank = lazy(() => import("../pages/Blank"));
  */
 const routes = [
   {
+    path: "/app/inventory-check",
+    component: lazy(() => import("../pages/ProductsInventory")),
+  },
+  {
     path: "/dashboard", // the url
     component: Dashboard,
   },
@@ -56,6 +60,10 @@ const routes = [
   {
     path: "/chats",
     component: Chats,
+  },
+  {
+    path: "/delivery",
+    component: lazy(() => import("../pages/Delivery")),
   },
   {
     path: "/manage-profile",

@@ -6,6 +6,68 @@ class Command(BaseCommand):
     help = "Initialize default categories and products"
 
     def handle(self, *args, **options):
+        # ---------- PERMISSIONS & ROLES ----------
+        initial_perms = [
+            "orders.view", "orders.edit", "orders.assign", "orders.update_status",
+            "products.create", "products.update", "products.delete", "products.view", "products.manage",
+            "customers.view", "inventory.manage",
+            "tickets.create", "tickets.update", "tickets.close",
+            "delivery.view", "delivery.manage",
+            "returns.process",
+            "payments.view", "payments.verify", "payments.refund",
+            "users.manage", "rbac.manage",
+            "dashboard.view", "chat.access",
+        ]
+        from apiApp.models.role import Role, Permission
+        for perm_name in initial_perms:
+            Permission.objects.get_or_create(name=perm_name)
+
+        role_permissions = {
+            "admin": "all",
+            "staff_inventory": [
+                "products.create",
+                "products.update",
+                "products.delete",
+                "products.view",
+                "inventory.manage",
+                "dashboard.view"
+            ],
+            "staff_support": [
+                "orders.view",
+                "customers.view",
+                "tickets.create",
+                "tickets.update",
+                "tickets.close",
+                "chat.access",
+                "dashboard.view"
+            ],
+            "staff_delivery": [
+                "orders.view",
+                "orders.assign",
+                "orders.update_status",
+                "delivery.view",
+                "delivery.manage",
+                "returns.process",
+                "dashboard.view"
+            ],
+            "staff_sale": [
+                "orders.view",
+                "customers.view",
+                "chat.access",
+                "delivery.view",
+                "dashboard.view"
+            ],
+        }
+        for role_name, perms in role_permissions.items():
+            role_obj, _ = Role.objects.get_or_create(name=role_name)
+            if perms == "all":
+                perm_objs = Permission.objects.all()
+            else:
+                perm_objs = Permission.objects.filter(name__in=perms)
+            role_obj.permissions.set(perm_objs)
+            role_obj.save()
+        self.stdout.write(self.style.SUCCESS("Seeded permissions and roles successfully."))
+
         # ---------- CATEGORIES ----------
         categories_data = [
             {"name": "Oils & Extracts", "icon": "/Oil_Extracts.svg"},

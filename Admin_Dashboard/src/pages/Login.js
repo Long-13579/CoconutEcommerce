@@ -20,6 +20,7 @@ function Login() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
+      
       const data = await res.json();
       if (res.ok && data.access) {
         localStorage.setItem("token", data.access);

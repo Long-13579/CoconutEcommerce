@@ -10,6 +10,7 @@ class Product(models.Model):
     image = models.ImageField(upload_to="product_img", blank=True, null=True)
     featured = models.BooleanField(default=False)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, related_name="products", blank=True, null=True)
+    quantity = models.IntegerField(default=0)
 
     def __str__(self):
         return self.name
