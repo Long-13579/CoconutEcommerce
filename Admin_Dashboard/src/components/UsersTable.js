@@ -46,8 +46,7 @@ const UsersTable = ({ resultsPerPage, filter, staffMode }) => {
         <Table>
           <TableHeader>
             <tr>
-              <TableCell>First Name</TableCell>
-              <TableCell>Last Name</TableCell>
+              <TableCell>User Name</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Joined on</TableCell>
             </tr>
@@ -56,19 +55,7 @@ const UsersTable = ({ resultsPerPage, filter, staffMode }) => {
             {data.map((user, i) => (
               <TableRow key={i}>
                 <TableCell>
-                  <div className="flex items-center text-sm">
-                    <Avatar
-                      className="hidden mr-3 md:block"
-                      src={user.avatar}
-                      alt="User image"
-                    />
-                    <div>
-                      <p className="font-semibold">{user.first_name}</p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-sm">{user.last_name}</span>
+                  <span className="text-sm">{user.username}</span>
                 </TableCell>
                 <TableCell>
                   <span className="text-sm">{user.email}</span>

@@ -29,7 +29,7 @@ function ProductsInventory() {
             setError(null);
             try {
                 // Get orders with status 'Pending from Inventory'
-                const response = await fetch("http://localhost:8000/api/order/get_orders/");
+                const response = await fetch("http://localhost:8000/api/order/get_all_orders/");
                 const contentType = response.headers.get("content-type");
                 if (!response.ok) {
                     const text = await response.text();

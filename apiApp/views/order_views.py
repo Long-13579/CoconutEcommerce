@@ -12,6 +12,12 @@ from ..serializers import OrderSerializer, OrderItemSerializer
 from ..utils.token_decode import get_user_id_from_request
 
 @api_view(['GET'])
+def get_all_orders(request):
+  orders = Order.objects.all()
+  serializer = OrderSerializer(orders, many=True)
+  return Response(serializer.data)
+
+@api_view(['GET'])
 def get_orders(request):
   user_id = get_user_id_from_request(request)
   try:
