@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("apiApp", "0013_product_quantity_alter_order_status"),
+        ("apiApp", "0015_product_quantity_alter_order_status"),
     ]
 
     operations = [

@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("apiApp", "0010_remove_customuser_first_name_and_more"),
+        ("apiApp", "00011_cart_user"),
     ]
 
     operations = [
