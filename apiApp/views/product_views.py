@@ -9,8 +9,14 @@ from rest_framework import status
 
 @api_view(['GET'])
 def product_list(request):
-    products = Product.objects.all()
+    products = Product.objects.filter(featured=True)
     serializer = ProductListSerializer(products, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def product_list_admin(request):
+    products = Product.objects.all()
+    serializer = ProductDetailSerializer(products, many=True)
     return Response(serializer.data)
 
 

@@ -51,7 +51,7 @@ const ProductsAll = () => {
 
   // Fetch products
   const fetchProducts = () => {
-    let url = "http://127.0.0.1:8000/products/list"; // featured products
+    let url = "http://127.0.0.1:8000/products/list_admin"; // featured products
     if (selectedCategory) {
       url = `http://127.0.0.1:8000/products/search?query=${encodeURIComponent(
         selectedCategory

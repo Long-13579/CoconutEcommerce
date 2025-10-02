@@ -7,20 +7,17 @@ class ProductListSerializer(serializers.ModelSerializer):
     photo = serializers.SerializerMethodField()
     shortDescription = serializers.SerializerMethodField()
     featureDescription = serializers.SerializerMethodField()
-    longDescription = serializers.SerializerMethodField()
+    londDescription = serializers.SerializerMethodField()
     qty = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
     reviews = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ["id", "photo", "name", "shortDescription", "featureDescription", "longDescription", "price","slug", "qty", "rating", "reviews"]
+        fields = ["id", "photo", "name", "shortDescription", "featureDescription", "londDescription", "price", "qty", "rating", "reviews"]
 
     def get_photo(self, obj):
-        try:
-            return obj.image.url if obj.image else None
-        except:
-            return None
+        return obj.image.url if obj.image else "https://vetra.laborasyon.com/assets/images/products/1.jpg"
 
     def get_shortDescription(self, obj):
         return obj.description[:50] if obj.description else ""
@@ -28,29 +25,23 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_featureDescription(self, obj):
         return obj.description[:100] if obj.description else ""
 
-    def get_longDescription(self, obj):
+    def get_londDescription(self, obj):
         return obj.description if obj.description else ""
 
     def get_qty(self, obj):
-        return 100  
+        return 100
 
     def get_rating(self, obj):
-        return 5.0  
+        return 5.0
 
     def get_reviews(self, obj):
-        return []   # giữ nguyên
-
-    def get_category(self, obj):
-        return obj.category.name if obj.category else None
-
+        return []
 
 class ProductDetailSerializer(serializers.ModelSerializer):
-    category_id = serializers.IntegerField(source="category.id", read_only=True)
-    category_name = serializers.CharField(source="category.name", read_only=True)
     class Meta:
         model = Product
         fields = [
-            "id", "name", "description", "slug", "image", "price", "category_id", "category_name"
+            "id", "name", "description", "slug", "image", "price","category"
         ]
 
 class ProductCreateSerializer(serializers.ModelSerializer):
