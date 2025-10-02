@@ -1,5 +1,5 @@
 import base64
-from datetime import timezone
+from django.utils import timezone
 import hashlib
 import hmac
 import json
