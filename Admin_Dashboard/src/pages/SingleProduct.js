@@ -17,7 +17,7 @@ const SingleProduct = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/products/${slug}`);
+        const res = await fetch(`http://127.0.0.1:8000/api/products/${slug}`);
         if (!res.ok) throw new Error("Failed to fetch product");
         const data = await res.json();
 

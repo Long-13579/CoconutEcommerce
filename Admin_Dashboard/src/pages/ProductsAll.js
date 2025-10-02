@@ -51,13 +51,13 @@ const ProductsAll = () => {
 
   // Fetch products
   const fetchProducts = () => {
-    let url = "http://127.0.0.1:8000/products/list_admin";
+    let url = "http://127.0.0.1:8000/api/products/list_admin";
     if (selectedCategory) {
-      url = `http://127.0.0.1:8000/products/search?query=${encodeURIComponent(
+      url = `http://127.0.0.1:8000/api/products/search?query=${encodeURIComponent(
         selectedCategory
       )}`;
     } else if (searchTerm) {
-      url = `http://127.0.0.1:8000/products/search?query=${encodeURIComponent(
+      url = `http://127.0.0.1:8000/api/products/search?query=${encodeURIComponent(
         searchTerm
       )}`;
     }
@@ -93,7 +93,7 @@ const ProductsAll = () => {
   async function handleDelete() {
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/products/${selectedDeleteProduct.slug}/delete`,
+        `http://127.0.0.1:8000/api/products/${selectedDeleteProduct.slug}/delete`,
         { method: "DELETE" }
       );
 
@@ -230,7 +230,7 @@ const ProductsAll = () => {
                     <div className="flex items-center text-sm">
                       <Avatar
                         className="hidden mr-4 md:block"
-                        src={product.image}
+                        src={"http://127.0.0.1:8000" + product.image}
                         alt="Product image"
                       />
                       <div>
@@ -296,7 +296,7 @@ const ProductsAll = () => {
                     {product.image && (
                       <img
                         className="object-cover w-full h-40"
-                        src={product.image}
+                        src={"http://127.0.0.1:8000" + product.image}
                         alt={product.name}
                       />
                     )}

@@ -60,7 +60,7 @@ const AddProduct = () => {
       data.append("featured", formData.featured ? "true" : "false");
       data.append("category", formData.category);
 
-      const res = await fetch("http://127.0.0.1:8000/products/create", {
+      const res = await fetch("http://127.0.0.1:8000/api/products/create", {
         method: "POST",
         body: data,
       });

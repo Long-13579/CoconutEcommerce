@@ -32,7 +32,7 @@ const UpdateProduct = () => {
 
   // Fetch product detail
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/products/${slug}`)
+    fetch(`http://127.0.0.1:8000/api/products/${slug}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load product");
         return res.json();
@@ -90,7 +90,7 @@ const UpdateProduct = () => {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/products/${slug}/update`,
+        `http://127.0.0.1:8000/api/products/${slug}/update`,
         {
           method: "PATCH", // PATCH để update một phần
           body: form,
