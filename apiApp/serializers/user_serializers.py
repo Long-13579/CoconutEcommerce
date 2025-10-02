@@ -10,13 +10,14 @@ class UserSerializer(serializers.ModelSerializer):
     role = serializers.PrimaryKeyRelatedField(queryset=get_user_model().role.field.related_model.objects.all(), required=False, allow_null=True, write_only=True)
     role_name = serializers.SerializerMethodField(read_only=True)
 
-    password = serializers.CharField(write_only=False, required=False)
-
     class Meta:
         model = get_user_model()
         fields = [
             "id", "email", "username", "profile_picture_url", "avatar", "joined_on", "state", "role", "role_name", "is_staff_account", "password"
         ]
+        extra_kwargs = {
+            'password': {'write_only': True}  # Ensure password is write-only
+        }
 
     def create(self, validated_data):
         password = validated_data.pop("password", None)

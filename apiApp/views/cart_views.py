@@ -3,14 +3,15 @@ from rest_framework.response import Response
 from rest_framework import status
 from ..models import Cart, CartItem, Product
 from ..serializers import CartSerializer, CartItemSerializer, CartStatSerializer, SimpleCartSerializer
+from ..utils.token_decode import get_user_id_from_request
 
 
 @api_view(["POST"])
 def add_to_cart(request):
-    cart_code = request.data.get("cart_code")
+    user_id = get_user_id_from_request(request=request)
     product_id = request.data.get("product_id")
 
-    cart, _ = Cart.objects.get_or_create(cart_code=cart_code)
+    cart, _ = Cart.objects.get_or_create(user_id=user_id)
     product = Product.objects.get(id=product_id)
 
     cartitem, _ = CartItem.objects.get_or_create(product=product, cart=cart)
@@ -42,18 +43,19 @@ def delete_cartitem(request, pk):
 
 
 @api_view(['GET'])
-def get_cart(request, cart_code):
-    cart = Cart.objects.filter(cart_code=cart_code).first()
+def get_cart(request):
+    user_id = get_user_id_from_request(request=request)
+    cart = Cart.objects.filter(user_id=user_id).first()
     if cart:
         serializer = CartSerializer(cart)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response({"error": "Cart not found."}, status=status.HTTP_404_NOT_FOUND)
+    return Response([])
 
 
 @api_view(['GET'])
 def get_cart_stat(request):
-    cart_code = request.query_params.get("cart_code")
-    cart = Cart.objects.filter(cart_code=cart_code).first()
+    user_id = request.query_params.get("user_id")
+    cart = Cart.objects.filter(user_id=user_id).first()
     if cart:
         serializer = CartStatSerializer(cart)
         return Response(serializer.data)
@@ -62,10 +64,10 @@ def get_cart_stat(request):
 
 @api_view(['GET'])
 def product_in_cart(request):
-    cart_code = request.query_params.get("cart_code")
+    user_id = request.query_params.get("user_id")
     product_id = request.query_params.get("product_id")
 
-    cart = Cart.objects.filter(cart_code=cart_code).first()
+    cart = Cart.objects.filter(user_id=user_id).first()
     product = Product.objects.get(id=product_id)
     exists = CartItem.objects.filter(cart=cart, product=product).exists()
 
