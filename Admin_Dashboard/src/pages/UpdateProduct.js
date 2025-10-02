@@ -15,7 +15,7 @@ import Icon from "../components/Icon";
 
 const UpdateProduct = () => {
   const { slug } = useParams();
-  const history = useHistory(); // ✅ React Router v5
+  const history = useHistory();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -27,9 +27,10 @@ const UpdateProduct = () => {
     image: null,
   });
 
+  const [originalData, setOriginalData] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Lấy chi tiết product từ API
+  // Fetch product detail
   useEffect(() => {
     fetch(`http://127.0.0.1:8000/products/${slug}`)
       .then((res) => {
@@ -38,6 +39,15 @@ const UpdateProduct = () => {
       })
       .then((data) => {
         setFormData({
+          name: data.name,
+          description: data.description,
+          slug: data.slug,
+          price: data.price,
+          featured: data.featured,
+          category: data.category ? data.category.id : "",
+          image: data.image || null,
+        });
+        setOriginalData({
           name: data.name,
           description: data.description,
           slug: data.slug,
@@ -69,27 +79,26 @@ const UpdateProduct = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const form = new FormData();
-    form.append("name", formData.name);
-    form.append("description", formData.description);
-    form.append("slug", formData.slug);
-    form.append("price", formData.price);
-    form.append("featured", formData.featured ? "true" : "false");
-    form.append("category", formData.category);
-    if (formData.image instanceof File) {
-      form.append("image", formData.image);
-    }
+
+    // Chỉ append những field thay đổi
+    if (formData.name !== originalData.name) form.append("name", formData.name);
+    if (formData.description !== originalData.description) form.append("description", formData.description);
+    if (formData.price !== originalData.price) form.append("price", formData.price);
+    if (formData.featured !== originalData.featured) form.append("featured", formData.featured ? "true" : "false");
+    if (formData.category !== originalData.category) form.append("category", formData.category);
+    if (formData.image instanceof File) form.append("image", formData.image);
 
     try {
       const res = await fetch(
         `http://127.0.0.1:8000/products/${slug}/update`,
         {
-          method: "PUT",
+          method: "PATCH", // PATCH để update một phần
           body: form,
         }
       );
       if (!res.ok) throw new Error("Update failed");
       alert("✅ Product updated!");
-      history.push("/all-products"); // ✅ điều hướng về danh sách
+      history.push("/all-products");
     } catch (err) {
       console.error("Error updating product:", err);
       alert("❌ Failed to update product");
@@ -147,8 +156,7 @@ const UpdateProduct = () => {
                 className="mb-4"
                 name="slug"
                 value={formData.slug}
-                onChange={handleChange}
-                disabled // thường slug không cho sửa
+                disabled
               />
             </Label>
 
@@ -199,9 +207,13 @@ const UpdateProduct = () => {
                 className="mb-4"
                 onChange={handleChange}
               />
-              {formData.image && !(formData.image instanceof File) && (
+              {formData.image && (
                 <img
-                  src={formData.image}
+                  src={
+                    formData.image instanceof File
+                      ? URL.createObjectURL(formData.image)
+                      : formData.image
+                  }
                   alt="Current"
                   className="w-32 mt-2 rounded"
                 />

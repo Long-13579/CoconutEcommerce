@@ -51,7 +51,7 @@ const ProductsAll = () => {
 
   // Fetch products
   const fetchProducts = () => {
-    let url = "http://127.0.0.1:8000/products/list_admin"; // featured products
+    let url = "http://127.0.0.1:8000/products/list_admin";
     if (selectedCategory) {
       url = `http://127.0.0.1:8000/products/search?query=${encodeURIComponent(
         selectedCategory
@@ -90,28 +90,26 @@ const ProductsAll = () => {
     setIsModalOpen(false);
   }
 
-async function handleDelete() {
-  try {
-    const res = await fetch(
-      `http://127.0.0.1:8000/products/${selectedDeleteProduct.slug}/delete`,
-      { method: "DELETE" }
-    );
+  async function handleDelete() {
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8000/products/${selectedDeleteProduct.slug}/delete`,
+        { method: "DELETE" }
+      );
 
-    if (res.ok) {
-      alert(`✅ Deleted "${selectedDeleteProduct.name}" successfully!`);
-      closeModal();
-      fetchProducts();
-    } else {
-      alert(`❌ Delete failed: status ${res.status}`);
-      console.error("Delete failed", res);
+      if (res.ok) {
+        alert(`✅ Deleted "${selectedDeleteProduct.name}" successfully!`);
+        closeModal();
+        fetchProducts();
+      } else {
+        alert(`❌ Delete failed: status ${res.status}`);
+        console.error("Delete failed", res);
+      }
+    } catch (err) {
+      console.error("Delete error", err);
+      alert("❌ Delete request error");
     }
-  } catch (err) {
-    console.error("Delete error", err);
-    alert("❌ Delete request error");
   }
-}
-
-
 
   // Toggle list / grid
   const handleChangeView = () => {
@@ -292,45 +290,57 @@ async function handleDelete() {
           {/* Grid view */}
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 mb-8">
             {data.map((product) => (
-              <Card key={product.id}>
-                {product.image && (
-                  <img
-                    className="object-cover w-full h-40"
-                    src={product.image}
-                    alt={product.name}
-                  />
-                )}
-                <CardBody>
-                  <p className="font-semibold truncate mb-2 text-gray-600 dark:text-gray-300">
-                    {product.name}
-                  </p>
-                  <p className="mb-2 text-purple-500 font-bold text-lg">
-                    ${product.price}
-                  </p>
-                  <p className="mb-4 text-sm">
-                    {product.category ? product.category.name : "N/A"}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <Link to={`/products/${product.slug}`}>
-                      <Button icon={EyeIcon} className="mr-2" size="small" />
-                    </Link>
-                    <Link to={`/products/${product.slug}/update`}>
+              <div key={product.id} className="relative">
+                <Card>
+                  <div className="relative">
+                    {product.image && (
+                      <img
+                        className="object-cover w-full h-40"
+                        src={product.image}
+                        alt={product.name}
+                      />
+                    )}
+
+                    {/* Featured badge góc trên bên tr */}
+                    {(product.featured === true || product.featured === 1 || product.featured === "1") && (
+                      <span className="absolute top-2 left-2 bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded shadow">
+                        Featured
+                      </span>
+                    )}
+                  </div>
+
+                  <CardBody>
+                    <p className="font-semibold truncate mb-2 text-gray-600 dark:text-gray-300">
+                      {product.name}
+                    </p>
+                    <p className="mb-2 text-purple-500 font-bold text-lg">
+                      ${product.price}
+                    </p>
+                    <p className="mb-4 text-sm">
+                      {product.category ? product.category.name : "N/A"}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <Link to={`/products/${product.slug}`}>
+                        <Button icon={EyeIcon} className="mr-2" size="small" />
+                      </Link>
+                      <Link to={`/products/${product.slug}/update`}>
+                        <Button
+                          icon={EditIcon}
+                          className="mr-2"
+                          layout="outline"
+                          size="small"
+                        />
+                      </Link>
                       <Button
-                        icon={EditIcon}
-                        className="mr-2"
+                        icon={TrashIcon}
                         layout="outline"
                         size="small"
+                        onClick={() => openModal(product)}
                       />
-                    </Link>
-                    <Button
-                      icon={TrashIcon}
-                      layout="outline"
-                      size="small"
-                      onClick={() => openModal(product)}
-                    />
-                  </div>
-                </CardBody>
-              </Card>
+                    </div>
+                  </CardBody>
+                </Card>
+              </div>
             ))}
           </div>
 
