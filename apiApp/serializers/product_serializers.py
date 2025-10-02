@@ -12,12 +12,31 @@ class ProductListSerializer(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField()
     reviews = serializers.SerializerMethodField()
 
+    # chỉ thêm slug + category
+    category = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
-        fields = ["id", "photo", "name", "shortDescription", "featureDescription", "londDescription", "price", "qty", "rating", "reviews"]
+        fields = [
+            "id",
+            "slug",                 # 👈 thêm slug
+            "photo",
+            "name",
+            "shortDescription",
+            "featureDescription",
+            "londDescription",
+            "price",
+            "qty",
+            "rating",
+            "reviews",
+            "category",             # 👈 thêm category (tên thôi)
+        ]
 
     def get_photo(self, obj):
-        return obj.image.url if obj.image else "https://vetra.laborasyon.com/assets/images/products/1.jpg"
+        try:
+            return obj.image.url if obj.image else None
+        except:
+            return None
 
     def get_shortDescription(self, obj):
         return obj.description[:50] if obj.description else ""
@@ -29,13 +48,17 @@ class ProductListSerializer(serializers.ModelSerializer):
         return obj.description if obj.description else ""
 
     def get_qty(self, obj):
-        return 100
+        return 100  # giữ nguyên như bạn có
 
     def get_rating(self, obj):
-        return 5.0
+        return 5.0  # giữ nguyên
 
     def get_reviews(self, obj):
-        return []
+        return []   # giữ nguyên
+
+    def get_category(self, obj):
+        return obj.category.name if obj.category else None
+
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
