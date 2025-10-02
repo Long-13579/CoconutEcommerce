@@ -1,4 +1,5 @@
 import base64
+from datetime import timezone
 import hashlib
 import hmac
 import json
@@ -39,7 +40,9 @@ def create_checkout_session(request):
 
     total_amount = 0
     for item in cartItems:
-      total_amount += item.product.price * item.quantity
+      discount_percent = get_discount_percent(item.product)
+      temp_total = item.product.price * item.quantity
+      total_amount += temp_total * (1 - discount_percent)
 
     total_amount *= 26000
 
@@ -139,7 +142,16 @@ def fulfill_checkout(session, user_id):
     cartitems = cart.cartitems.all()
 
     for item in cartitems:
+        discount_percent = get_discount_percent(item.product)
+        price = item.product.price * (1 - discount_percent)
         orderitem = OrderItem.objects.create(order=order, product=item.product, 
-                                             quantity=item.quantity)
+                                             quantity=item.quantity, price=price)
     
     cart.delete()
+
+def get_discount_percent(product):
+  now = timezone.now()
+  discounts = product.discounts.filter(start_date__lte=now, end_date__gte=now)
+  if discounts.exists():
+      return max(d.discount_percent for d in discounts) / 100  # best discount
+  return 0
