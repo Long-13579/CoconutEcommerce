@@ -1,3 +1,4 @@
+from datetime import timezone
 from rest_framework import serializers
 from ..models import Cart, CartItem
 from .product_serializers import ProductListSerializer
@@ -12,7 +13,9 @@ class CartItemSerializer(serializers.ModelSerializer):
         fields = ["id", "product", "quantity", "sub_total"]
 
     def get_sub_total(self, cartitem):
-        return cartitem.product.price * cartitem.quantity
+        discount_percent = get_discount_percent(cartitem.product)
+        price = cartitem.product.price * (1 - discount_percent)
+        return price * cartitem.quantity
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -24,8 +27,12 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ["id", "cart_code", "cartitems", "cart_total"]
 
     def get_cart_total(self, cart):
-        return sum([item.quantity * item.product.price for item in cart.cartitems.all()])
-
+        total = 0
+        for item in cart.cartitems.all():
+            discount_percent = get_discount_percent(item.product)
+            price = item.product.price * (1 - discount_percent)
+            total += price * item.quantity
+        return total
 
 class CartStatSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
@@ -71,3 +78,10 @@ class SimpleCartSerializer(serializers.ModelSerializer):
 
     def get_num_of_items(self, cart):
         return sum([item.quantity for item in cart.cartitems.all()])
+
+def get_discount_percent(product):
+  now = timezone.now()
+  discounts = product.discounts.filter(start_date__lte=now, end_date__gte=now)
+  if discounts.exists():
+      return max(d.discount_percent for d in discounts) / 100  # best discount
+  return 0
