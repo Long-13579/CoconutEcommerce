@@ -9,9 +9,10 @@ from rest_framework import status
 
 @api_view(['GET'])
 def product_list(request):
-    products = Product.objects.filter(featured=True)
+    products = Product.objects.all()
     serializer = ProductListSerializer(products, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 def product_list_by_category(request):
