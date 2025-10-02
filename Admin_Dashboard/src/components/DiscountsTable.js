@@ -37,7 +37,7 @@ const DiscountsTable = () => {
         setTotalResults(data.length);
         setDiscounts(data.slice((page - 1) * resultsPerPage, page * resultsPerPage));
       } catch (err) {
-        setError("Lỗi khi tải danh sách discount");
+        setError("Error loading discount list");
       } finally {
         setLoading(false);
       }
@@ -49,7 +49,7 @@ const DiscountsTable = () => {
     setPage(p);
   }
 
-  if (loading) return <div>Đang tải...</div>;
+  if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
   return (
@@ -58,11 +58,11 @@ const DiscountsTable = () => {
         <TableHeader>
           <tr>
             <TableCell>ID</TableCell>
-            <TableCell>Tên</TableCell>
-            <TableCell>Phần trăm giảm</TableCell>
-            <TableCell>Sản phẩm áp dụng</TableCell>
-            <TableCell>Ngày bắt đầu</TableCell>
-            <TableCell>Ngày kết thúc</TableCell>
+            <TableCell>Name</TableCell>
+            <TableCell>Percentage reduction</TableCell>
+            <TableCell>Applicable products</TableCell>
+            <TableCell>Start date</TableCell>
+            <TableCell>End date</TableCell>
           </tr>
         </TableHeader>
         <TableBody>
@@ -81,7 +81,7 @@ const DiscountsTable = () => {
               <TableCell>{discount.discount_percent}%</TableCell>
               <TableCell>
                 {discount.products && discount.products.length > 0
-                  ? discount.products.length + " sản phẩm"
+                  ? discount.products.length + " products"
                   : "0"}
               </TableCell>
               <TableCell>{formatDate(discount.start_date)}</TableCell>

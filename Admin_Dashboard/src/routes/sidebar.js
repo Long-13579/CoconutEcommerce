@@ -12,7 +12,7 @@ export const menuByRole = {
   staff_inventory: ["Dashboard", "Products", "All Products", "Add Product", "Inventory Check", "Profile", "Settings", "Logout"],
   staff_support: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
   staff_delivery: ["Dashboard", "Delivery", "Profile", "Settings", "Logout"],
-  staff_sale: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
+  staff_sale: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout", "Discounts"],
 };
 
 // Lọc routes theo role đã lưu trong storage bằng cách dùng menuByRole và baseRoutes  

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getDiscountDetail, updateDiscount } from "../services/discountService";
+import { getDiscountDetail, updateDiscount, deleteDiscount } from "../services/discountService";
 import ProductTable from "../components/ProductTable";
+import ProductTableSelectable from "../components/ProductTableSelectable";
 import ProductSelectPopup from "../components/ProductSelectPopup";
 import PageTitle from "../components/Typography/PageTitle";
 
@@ -20,6 +21,8 @@ const DiscountDetail = () => {
   const [form, setForm] = useState({ name: "", discount_percent: "", start_date: "", end_date: "" });
   const [saving, setSaving] = useState(false);
   const [showProductPopup, setShowProductPopup] = useState(false);
+  const [selectedToDelete, setSelectedToDelete] = useState([]);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
   const openProductPopup = () => setShowProductPopup(true);
   const closeProductPopup = () => setShowProductPopup(false);
   // Nhận mảng object sản phẩm, thêm vào bảng và cập nhật product_ids
@@ -45,7 +48,10 @@ const DiscountDetail = () => {
       setLoading(true);
       try {
         const data = await getDiscountDetail(id);
-        setDiscount(data);
+        setDiscount({
+          ...data,
+          _originalProducts: data.products // luôn lưu bản gốc khi load
+        });
         setForm({
           name: data.name || "",
           discount_percent: data.discount_percent || "",
@@ -54,7 +60,7 @@ const DiscountDetail = () => {
           product_ids: data.products ? data.products.map(p => p.id) : [],
         });
       } catch (err) {
-        setError("Không thể tải thông tin discount");
+        setError("Unable to load discount information");
       } finally {
         setLoading(false);
       }
@@ -63,9 +69,9 @@ const DiscountDetail = () => {
   }, [id]);
 
 
-  if (loading) return <div>Đang tải...</div>;
+  if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
-  if (!discount) return <div>Không tìm thấy discount</div>;
+  if (!discount) return <div>No discount found</div>;
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -79,26 +85,27 @@ const DiscountDetail = () => {
       discount_percent: discount.discount_percent || "",
       start_date: discount.start_date ? discount.start_date.slice(0, 10) : "",
       end_date: discount.end_date ? discount.end_date.slice(0, 10) : "",
-      product_ids: (discount._originalProducts || discount.products || []).map(p => p.id),
+      product_ids: (discount._originalProducts || []).map(p => p.id),
     });
     setDiscount(prev =>
       prev._originalProducts
         ? { ...prev, products: prev._originalProducts }
         : prev
     );
+    setSelectedToDelete([]);
   };
 
   const handleSave = async () => {
     // Validate ngày
     const { start_date, end_date } = form;
     if (!start_date || !end_date) {
-      alert("Vui lòng nhập đầy đủ ngày bắt đầu và ngày kết thúc.");
+      alert("Please enter full start and end dates.");
       return;
     }
     const start = new Date(start_date);
     const end = new Date(end_date);
     if (start >= end) {
-      alert("Ngày bắt đầu phải nhỏ hơn ngày kết thúc và không được trùng ngày.");
+      alert("The start date must be less than the end date and cannot be the same date.");
       return;
     }
     setSaving(true);
@@ -107,7 +114,7 @@ const DiscountDetail = () => {
       setDiscount(updated);
       setEditMode(false);
     } catch (err) {
-      alert("Lỗi khi lưu dữ liệu");
+      alert("Error saving data");
     } finally {
       setSaving(false);
     }
@@ -117,20 +124,57 @@ const DiscountDetail = () => {
     <div className="p-4">
       <PageTitle>Discount Detail</PageTitle>
       <div className="mb-4 flex items-center gap-4">
-        <Link to="/discounts" className="text-blue-600 hover:underline">← Quay lại danh sách</Link>
+        <Link to="/discounts" className="text-blue-600 hover:underline">← Back to list</Link>
         {!editMode && (
-          <button
-            onClick={handleEdit}
-            className="ml-auto px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded shadow"
-          >
-            Chỉnh sửa
-          </button>
+          <>
+            <button
+              onClick={handleEdit}
+              className="ml-auto px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded shadow"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => setShowDeletePopup(true)}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded shadow"
+            >
+              Delete
+            </button>
+          </>
         )}
       </div>
+      {showDeletePopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded shadow-lg p-6 w-full max-w-sm">
+            <h2 className="text-lg font-bold mb-4">Confirm Deleting Discount</h2>
+            <p className="mb-6">Are you sure you want to delete this discount?</p>
+            <div className="flex gap-4 justify-end">
+              <button
+                className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded"
+                onClick={() => setShowDeletePopup(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded"
+                onClick={async () => {
+                  try {
+                    await deleteDiscount(discount.id);
+                    window.location.href = "/discounts";
+                  } catch {
+                    alert("Delete failed");
+                  }
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="bg-white shadow rounded p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div>
-            <label className="block text-gray-600 font-semibold mb-1">Tên</label>
+            <label className="block text-gray-600 font-semibold mb-1">Name</label>
             {editMode ? (
               <input
                 type="text"
@@ -144,7 +188,7 @@ const DiscountDetail = () => {
             )}
           </div>
           <div>
-            <label className="block text-gray-600 font-semibold mb-1">Phần trăm giảm</label>
+            <label className="block text-gray-600 font-semibold mb-1">Percentage reduction</label>
             {editMode ? (
               <input
                 type="number"
@@ -160,7 +204,7 @@ const DiscountDetail = () => {
             )}
           </div>
           <div>
-            <label className="block text-gray-600 font-semibold mb-1">Ngày bắt đầu</label>
+            <label className="block text-gray-600 font-semibold mb-1">Start date</label>
             {editMode ? (
               <input
                 type="date"
@@ -174,7 +218,7 @@ const DiscountDetail = () => {
             )}
           </div>
           <div>
-            <label className="block text-gray-600 font-semibold mb-1">Ngày kết thúc</label>
+            <label className="block text-gray-600 font-semibold mb-1">End date</label>
             {editMode ? (
               <input
                 type="date"
@@ -190,34 +234,76 @@ const DiscountDetail = () => {
         </div>
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="block text-gray-600 font-semibold">Sản phẩm áp dụng</label>
+            <label className="block text-gray-600 font-semibold">Applicable products</label>
             {editMode && (
-              <button
-                type="button"
-                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
-                onClick={openProductPopup}
-              >
-                Thêm sản phẩm
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm"
+                  onClick={openProductPopup}
+                >
+                  Add Products
+                </button>
+                <button
+                  type="button"
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
+                  disabled={selectedToDelete.length === 0}
+                  onClick={() => {
+                    // Xóa các sản phẩm đã chọn
+                    const newIds = form.product_ids.filter(id => !selectedToDelete.includes(id));
+                    setForm({ ...form, product_ids: newIds });
+                    setDiscount(prev => ({
+                      ...prev,
+                      products: newIds.map(id => {
+                        const allProducts = prev.products || [];
+                        return allProducts.find(p => p.id === id);
+                      }).filter(Boolean)
+                    }));
+                    setSelectedToDelete([]);
+                  }}
+                >
+                  Delete Products
+                </button>
+              </div>
             )}
           </div>
-          <ProductTable
-            products={(() => {
-              // Lấy danh sách sản phẩm từ discount.products và bổ sung các id mới nếu có
-              const allProducts = discount.products || [];
-              // Tạo map để tránh trùng id
-              const productMap = new Map();
-              allProducts.forEach(p => productMap.set(p.id, p));
-              // Nếu có id mới mà chưa có object, tạo object tạm với id và tên rỗng
-              (form.product_ids || []).forEach(id => {
-                if (!productMap.has(id)) {
-                  productMap.set(id, { id, name: "(Mới chọn)", price: "", ...{} });
-                }
-              });
-              // Trả về danh sách theo thứ tự form.product_ids
-              return (form.product_ids || []).map(id => productMap.get(id)).filter(Boolean);
-            })()}
-          />
+          {editMode ? (
+            <ProductTableSelectable
+              products={(() => {
+                const allProducts = discount.products || [];
+                const productMap = new Map();
+                allProducts.forEach(p => productMap.set(p.id, p));
+                (form.product_ids || []).forEach(id => {
+                  if (!productMap.has(id)) {
+                    productMap.set(id, { id, name: "(Recently selected)", price: "", ...{} });
+                  }
+                });
+                return (form.product_ids || []).map(id => productMap.get(id)).filter(Boolean);
+              })()}
+              selectedIds={selectedToDelete}
+              onSelect={id => {
+                setSelectedToDelete(prev =>
+                  prev.includes(id)
+                    ? prev.filter(i => i !== id)
+                    : [...prev, id]
+                );
+              }}
+            />
+          ) : (
+            <ProductTable
+              products={(() => {
+                const allProducts = discount.products || [];
+                const productMap = new Map();
+                allProducts.forEach(p => productMap.set(p.id, p));
+                (form.product_ids || []).forEach(id => {
+                  if (!productMap.has(id)) {
+                    productMap.set(id, { id, name: "(Recently selected)", price: "", ...{} });
+                  }
+                });
+                return (form.product_ids || []).map(id => productMap.get(id)).filter(Boolean);
+              })()}
+            />
+          )}
         </div>
 
         <ProductSelectPopup
@@ -234,14 +320,14 @@ const DiscountDetail = () => {
               className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded shadow"
               disabled={saving}
             >
-              {saving ? "Đang lưu..." : "Lưu"}
+              {saving ? "Saving..." : "Save"}
             </button>
             <button
               onClick={handleCancel}
               className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded shadow"
               disabled={saving}
             >
-              Hủy
+              Cancel
             </button>
           </div>
         )}
