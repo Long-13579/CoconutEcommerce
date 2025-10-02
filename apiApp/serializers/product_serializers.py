@@ -14,7 +14,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ["id", "photo", "name", "shortDescription", "featureDescription", "londDescription", "price", "qty", "rating", "reviews"]
+        fields = ["id", "photo", "name", "shortDescription", "featureDescription", "longDescription", "price", "qty", "rating", "reviews"]
 
     def get_photo(self, obj):
         try:
@@ -32,10 +32,10 @@ class ProductListSerializer(serializers.ModelSerializer):
         return obj.description if obj.description else ""
 
     def get_qty(self, obj):
-        return 100  # giữ nguyên như bạn có
+        return 100  
 
     def get_rating(self, obj):
-        return 5.0  # giữ nguyên
+        return 5.0  
 
     def get_reviews(self, obj):
         return []   # giữ nguyên
