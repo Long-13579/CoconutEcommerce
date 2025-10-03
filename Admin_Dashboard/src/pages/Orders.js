@@ -18,6 +18,21 @@ async function updateStatus(orderId, newStatus) {
   }
 }
 
+// Định dạng ngày về dạng YYYY-MM-DD
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+  // Nếu API trả ISO có chữ 'T', cắt 10 ký tự đầu
+  if (typeof dateStr === "string" && dateStr.includes("T")) {
+    return dateStr.slice(0, 10);
+  }
+  // Fallback: parse Date rồi chuyển ISO và cắt 10 ký tự
+  try {
+    return new Date(dateStr).toISOString().slice(0, 10);
+  } catch (e) {
+    return "";
+  }
+}
+
 const STATUS_COLORS = {
   Paid: "bg-green-500 text-white",
   "Pending from Inventory": "bg-yellow-400 text-black",
@@ -153,7 +168,7 @@ function Orders() {
                   <td className="border px-4 py-2">{order.id}</td>
                   <td className="border px-4 py-2">{order.amount} {order.currency}</td>
                   <td className={`border px-4 py-2 font-bold rounded ${STATUS_COLORS[order.status] || "bg-gray-300"}`}>{order.status}</td>
-                  <td className="border px-4 py-2">{order.created_at}</td>
+                  <td className="border px-4 py-2">{formatDate(order.created_at)}</td>
                   <td className="border px-4 py-2">
                     <NavLink to={`/orders/${order.id}`} className="text-blue-600 underline mr-2">Details</NavLink>
                     {/* Action buttons for each status and role */}
