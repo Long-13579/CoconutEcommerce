@@ -15,4 +15,5 @@ urlpatterns = router.urls + [
     path("list/", views.user_list, name="user_list"),
     path('login/', login_view, name='login'),
     path('login_user/', views.login, name='login_user'),
+    path('update_status/<int:user_id>/', views.update_user_status, name='update_user_status'),
 ]

@@ -139,3 +139,30 @@ def user_list(request):
     users = User.objects.filter(is_staff_account=False)
     serializer = UserSerializer(users, many=True)
     return Response(serializer.data)
+
+
+@api_view(["PATCH"])
+@role_required(['admin'])
+def update_user_status(request, user_id: int):
+    try:
+        user = CustomUser.objects.get(id=user_id)
+    except CustomUser.DoesNotExist:
+        return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    new_status = request.data.get("status")
+    if new_status not in ["Active ✅", "Inactive ⏸️", "Blocked 🚫", "Deleted 🗑️", "Active", "Inactive", "Blocked", "Deleted"]:
+        return Response({"detail": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Persist minimal mapping using is_active
+    if new_status.startswith("Active"):
+        user.is_active = True
+    else:
+        user.is_active = False
+
+    user.save(update_fields=["is_active"]) 
+
+    return Response({
+        "id": user.id,
+        "account_status": "Active" if user.is_active else "Inactive",
+        "stored": new_status
+    })
