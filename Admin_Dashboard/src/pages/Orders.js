@@ -240,7 +240,7 @@ function Orders() {
               filteredOrders.map(order => (
                 <tr key={order.id}>
                   <td className="border px-4 py-2">
-                    <div>{order.customer_name || "N/A"}</div>
+                    <div>{(order.user && order.user.username) || order.customer_username || order.customer_name || "N/A"}</div>
                     <div className="text-xs text-gray-500">{order.customer_email}</div>
                     <div className="text-xs text-gray-500">{order.customer_phone}</div>
                   </td>
