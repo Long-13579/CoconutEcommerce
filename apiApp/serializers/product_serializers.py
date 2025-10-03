@@ -8,7 +8,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     photo = serializers.SerializerMethodField()
     shortDescription = serializers.SerializerMethodField()
     featureDescription = serializers.SerializerMethodField()
-    londDescription = serializers.SerializerMethodField()
+    longDescription = serializers.SerializerMethodField()
     qty = serializers.SerializerMethodField()
     rating = serializers.SerializerMethodField()
     reviews = serializers.SerializerMethodField()
@@ -33,7 +33,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             "reviews",
             "category_id",
             "category_name",
-            "discount_percent"
+            "discount_percent",
+            "featured"
         ]
 
     def get_photo(self, obj):
@@ -45,7 +46,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_featureDescription(self, obj):
         return obj.description[:100] if obj.description else ""
 
-    def get_londDescription(self, obj):
+    def get_longDescription(self, obj):
         return obj.description if obj.description else ""
 
     def get_qty(self, obj):
@@ -73,7 +74,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id", "name", "description", "slug", "image", "price", "category_id", "category_name", "discount_percent"
+            "id", "name", "description", "slug", "image", "price", "category_id", "category_name", "discount_percent", "featured"
         ]
     
     def get_discount_percent(self, obj):

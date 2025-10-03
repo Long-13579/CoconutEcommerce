@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('apiApp', '00012_alter_cart_cart_code'),
+        ('apiApp', '0016_rename_checkout_id_order_stripe_checkout_id'),
     ]
 
     operations = [
