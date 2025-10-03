@@ -8,8 +8,6 @@ function RoleManagement() {
     const [roles, setRoles] = useState([]);
     const [accounts, setAccounts] = useState([]);
     const [permissions, setPermissions] = useState([]); // Initialize permissions state
-  const [showCreateUser, setShowCreateUser] = useState(false);
-  const [newUser, setNewUser] = useState({ email: '', username: '', password: '', roleId: '', isStaff: true });
 
     // Fetch roles, users, permissions from API
     useEffect(() => {
@@ -93,9 +91,36 @@ function RoleManagement() {
         setViewRole(role);
     };
 
-    const handleUpdate = data => {
-        setRoles(roles.map(r => r.name === data.name ? { ...r, ...data } : r));
-        setEditRole(null);
+    //hàm handleUpdate để cập nhật role , hoạt động bằng cách gửi request PATCH đến API
+    // API được lấy từ ROLES_API_URL
+    // data là dữ liệu cần cập nhật
+    // body là dữ liệu cần gửi đến API
+    // res là response từ API
+    // updated là dữ liệu đã cập nhật
+    // setRoles là hàm để cập nhật danh sách roles
+    const handleUpdate = async (data) => {
+        try {
+            const body = {
+                name: data.name,
+                description: data.description,
+                permission_ids: Array.isArray(data.permissions) ? data.permissions.map(p => p.id ?? p) : [],
+            };
+            const res = await fetch(`${ROLES_API_URL}${data.id}/`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => null);
+                alert("Failed to update role: " + (err ? JSON.stringify(err) : res.status));
+                return;
+            }
+            const updated = await res.json();
+            setRoles(roles.map(r => r.id === updated.id ? { ...r, ...updated } : r));
+            setEditRole(null);
+        } catch (e) {
+            alert("Network error: " + e.message);
+        }
     };
     // Tạo role mới: gửi lên API (nếu backend hỗ trợ), ở đây chỉ cập nhật FE
     const [roleName, setRoleName] = useState('');
@@ -113,7 +138,7 @@ function RoleManagement() {
         e.preventDefault();
         if (!roleName) return;
         // Chỉ gửi mảng id permission lên backend
-    const res = await fetch(ROLES_API_URL, {
+        const res = await fetch(ROLES_API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -140,49 +165,6 @@ function RoleManagement() {
         setSelectedPermissionIds([]);
     };
 
-  // Create new account with selected role id
-  const submitCreateUser = async (e) => {
-    e.preventDefault();
-    if (!newUser.email || !newUser.username || !newUser.password || !newUser.roleId) {
-      alert('Please fill all fields and select a role');
-      return;
-    }
-    const token =
-      (typeof localStorage !== 'undefined' && (localStorage.getItem('access') || localStorage.getItem('token'))) ||
-      (typeof sessionStorage !== 'undefined' && (sessionStorage.getItem('access') || sessionStorage.getItem('token'))) || '';
-    try {
-      const res = await fetch(USERS_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          email: newUser.email,
-          username: newUser.username,
-          password: newUser.password,
-          role: Number(newUser.roleId), // backend expects role id (PK)
-          is_staff_account: !!newUser.isStaff,
-        })
-      });
-      if (!res.ok) {
-        const errText = await res.text().catch(() => '');
-        alert('Failed to create account: ' + errText.substring(0, 200));
-        return;
-      }
-      // refresh users list
-      fetch(USERS_API_URL)
-        .then(r => r.json())
-        .then(data => setAccounts(Array.isArray(data) ? data : []))
-        .catch(() => {});
-      setShowCreateUser(false);
-      setNewUser({ email: '', username: '', password: '', roleId: '', isStaff: true });
-      alert('Account created');
-    } catch (err) {
-      alert('Network error: ' + err.message);
-    }
-  };
-
     // Xóa role qua API
     const handleDeleteRole = async (roleId) => {
         if (window.confirm("Are you sure to delete this role?")) {
@@ -206,49 +188,6 @@ function RoleManagement() {
             <h2 className="text-2xl font-bold mb-4 text-left">Role Management</h2>
             <main className="flex flex-col flex-grow">
                 <div className="bg-white rounded shadow p-6 w-full flex flex-col flex-grow mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="font-semibold text-lg">Roles & Accounts</div>
-            <button
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-              onClick={() => setShowCreateUser(true)}
-            >+ Create new account</button>
-          </div>
-
-          {showCreateUser && (
-            <div className="mb-8 border rounded p-4 bg-gray-50">
-              <form onSubmit={submitCreateUser} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block mb-1 font-semibold">Email</label>
-                  <input className="border p-2 rounded w-full" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} required />
-                </div>
-                <div>
-                  <label className="block mb-1 font-semibold">Username</label>
-                  <input className="border p-2 rounded w-full" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} required />
-                </div>
-                <div>
-                  <label className="block mb-1 font-semibold">Password</label>
-                  <input type="password" className="border p-2 rounded w-full" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} required />
-                </div>
-                <div>
-                  <label className="block mb-1 font-semibold">Role</label>
-                  <select className="border p-2 rounded w-full" value={newUser.roleId} onChange={(e) => setNewUser({ ...newUser, roleId: e.target.value })} required>
-                    <option value="" disabled>Select role</option>
-                    {roles.map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input id="isStaff" type="checkbox" checked={newUser.isStaff} onChange={(e) => setNewUser({ ...newUser, isStaff: e.target.checked })} />
-                  <label htmlFor="isStaff">Staff account (access dashboard)</label>
-                </div>
-                <div className="md:col-span-2 flex gap-2 justify-end">
-                  <button type="button" className="px-4 py-2 rounded bg-gray-300" onClick={() => { setShowCreateUser(false); }}>Cancel</button>
-                  <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white">Create</button>
-                </div>
-              </form>
-            </div>
-          )}
                     <form onSubmit={handleCreateRole} className="mb-8">
                         <label className="block mb-2 font-semibold">Role Name</label>
                         <input
@@ -346,19 +285,19 @@ function RoleManagement() {
                                         <label className="block mb-2 font-semibold">Role Name</label>
                                         <input name="name" value={editRole.name} onChange={e => setEditRole({ ...editRole, name: e.target.value })} className="border p-2 rounded w-full mb-2" required />
                                         <label className="block mb-2 font-semibold">Description</label>
-                                        <input name="description" value={editRole.description} onChange={e => setEditRole({ ...editRole, description: e.target.value })} className="border p-2 rounded w-full mb-2" required />
+                                        <textarea name="description" value={editRole.description} onChange={e => setEditRole({ ...editRole, description: e.target.value })} className="border p-2 rounded w-full mb-2" rows="3" />
                                         <label className="block mb-2 font-semibold">Permissions</label>
                                         <div className="grid grid-cols-2 gap-2 mb-2">
-                                            {permissions.map(perm => (
+                                            {Object.values(permissions).flat().map(perm => (
                                                 <label key={perm.id} className="flex items-center">
-                                                    <input type="checkbox" checked={Array.isArray(editRole.permissions) && editRole.permissions.some(p => p.id === perm.id)} onChange={() => {
-                                                        let newPerms = Array.isArray(editRole.permissions) ? editRole.permissions.map(p => p.id) : [];
-                                                        if (newPerms.includes(perm.id)) {
-                                                            newPerms = newPerms.filter(id => id !== perm.id);
+                                                    <input type="checkbox" checked={Array.isArray(editRole.permissions) && (editRole.permissions.some(p => (p.id ?? p) === perm.id))} onChange={() => {
+                                                        let newPermIds = Array.isArray(editRole.permissions) ? editRole.permissions.map(p => p.id ?? p) : [];
+                                                        if (newPermIds.includes(perm.id)) {
+                                                            newPermIds = newPermIds.filter(id => id !== perm.id);
                                                         } else {
-                                                            newPerms.push(perm.id);
+                                                            newPermIds.push(perm.id);
                                                         }
-                                                        setEditRole({ ...editRole, permissions: permissions.filter(p => newPerms.includes(p.id)) });
+                                                        setEditRole({ ...editRole, permissions: newPermIds });
                                                     }} className="mr-2" />
                                                     <span>{perm.name}</span>
                                                     {perm.description && <span className="ml-2 text-xs text-gray-500">({perm.description})</span>}

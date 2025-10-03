@@ -12,7 +12,7 @@ function AccountForm({ roles, onSave, onCancel }) {
         username: "",
         password: "",
         confirmPassword: "",
-        role: roles[0].value,
+        role: roles[0] ? roles[0].id : "",
     });
     const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
     const handleSubmit = e => {
@@ -20,8 +20,6 @@ function AccountForm({ roles, onSave, onCancel }) {
         if (form.password !== form.confirmPassword) return alert("Passwords do not match!");
         onSave(form);
     };
-    // Filter out admin role from selection
-    const staffRoles = roles.filter(r => r.value.toLowerCase() !== "admin");
     return (
         <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center z-50" style={{ pointerEvents: 'auto' }}>
             <div
@@ -42,8 +40,8 @@ function AccountForm({ roles, onSave, onCancel }) {
                 <label className="block mb-2 font-semibold">Confirm Password</label>
                 <input name="confirmPassword" value={form.confirmPassword} onChange={handleChange} className="border p-2 rounded w-full mb-2" type="password" required />
                 <label className="block mb-2 font-semibold">Role</label>
-                <select name="role" value={form.role} onChange={handleChange} className="border p-2 rounded w-full mb-4">
-                    {staffRoles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                <select name="role" value={form.role} onChange={e => setForm({ ...form, role: Number(e.target.value) })} className="border p-2 rounded w-full mb-4">
+                    {roles.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
                 </select>
                 <div className="flex justify-end gap-2 mt-2">
                     <button type="button" className="px-4 py-2 rounded bg-gray-300" onClick={onCancel}>Cancel</button>
@@ -83,8 +81,8 @@ function Accounts() {
             .then(data => {
                 // data: [{id, name, description, permissions}]
                 setRoles(Array.isArray(data) ? data.map(r => ({
-                    id: r.id, // <-- add this for correct role mapping
-                    value: r.name,
+                    id: r.id,
+                    value: r.name, // giữ lại để tương thích các chỗ khác
                     label: r.description || r.name,
                     permissions: r.permissions || [],
                 })) : []);
@@ -116,8 +114,7 @@ function Accounts() {
     // hàm handleCreate được gọi, gửi dữ liệu qua API
     const handleCreate = async data => {
         // Tìm role id từ danh sách roles
-        const selectedRole = roles.find(r => r.value === data.role);
-        const roleId = selectedRole ? selectedRole.id : null;
+        const roleId = data.role || null; // đã là id
         try {
             const res = await fetch(API_URL, {
                 method: "POST",
