@@ -204,7 +204,7 @@ function ProductsInventory() {
                                                 {order.status === "Pending from Inventory" && (
                                                     <>
                                                         <Button size="small" className={`mr-2 text-white ${getLifecycle(order.id).packed_date ? "bg-blue-300 cursor-not-allowed opacity-60" : "bg-blue-400"}`} onClick={() => handlePacked(order.id)} disabled={!!getLifecycle(order.id).packed_date}>Packed</Button>
-                                                        <Button size="small" className="mr-2 bg-green-600 text-white" onClick={() => updateOrderStatus(order.id, "Pending from Delivery")}>Hand-over Date</Button>
+                                                        <Button size="small" className={`mr-2 text-white ${getLifecycle(order.id).packed_date ? "bg-green-600" : "bg-green-300 cursor-not-allowed opacity-60"}`} onClick={() => getLifecycle(order.id).packed_date && updateOrderStatus(order.id, "Pending from Delivery")} disabled={!getLifecycle(order.id).packed_date}>Handover for delivery</Button>
                                                         <Button size="small" className="bg-red-500 text-white" onClick={() => updateOrderStatus(order.id, "Cancelled")}>Out of Stock</Button>
                                                     </>
                                                 )}

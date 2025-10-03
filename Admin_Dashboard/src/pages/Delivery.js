@@ -204,7 +204,7 @@ function Delivery() {
                                     <th className="px-4 py-2">Order</th>
                                     <th className="px-4 py-2">Status</th>
                                     <th className="px-4 py-2">Assigned To</th>
-                                    <th className="px-4 py-2">Created At</th>
+                                    <th className="px-4 py-2">Dates</th>
                                     <th className="px-4 py-2">Actions</th>
                                 </tr>
                             </thead>
@@ -267,7 +267,20 @@ function Delivery() {
                                                             : (selectedShipper[delivery.id] || "")}
                                                     </span>
                                                 </td>
-                                                <td className="border px-4 py-2">{formatDate(delivery.created_at)}</td>
+                                                <td className="border px-4 py-2">
+                                                    {(() => {
+                                                        if (!delivery.order) return null;
+                                                        const lcStoreRaw = localStorage.getItem("orderLifecycleDates") || "{}";
+                                                        let lcStore = {};
+                                                        try { lcStore = JSON.parse(lcStoreRaw); } catch (_) { lcStore = {}; }
+                                                        const lc = lcStore[String(delivery.order.id)] || {};
+                                                        const items = [];
+                                                        if (lc.shipped_date) items.push(`Start Shipping: ${formatDate(lc.shipped_date)}`);
+                                                        if (lc.completed_date) items.push(`Delivered: ${formatDate(lc.completed_date)}`);
+                                                        if (lc.failed_date) items.push(`Failed: ${formatDate(lc.failed_date)}`);
+                                                        return items.length ? items.map((t, i) => (<div key={i}>{t}</div>)) : null;
+                                                    })()}
+                                                </td>
                                                 <td className="border px-4 py-2">
                                                     {/* Show Start Shipping if status is Pending from Delivery and shipper is selected (assigned_to or selectedShipper) */}
                                                     {delivery.order && delivery.order.status === "Pending from Delivery" && ((delivery.assigned_to && delivery.assigned_to.email) || selectedShipper[delivery.id]) && (
