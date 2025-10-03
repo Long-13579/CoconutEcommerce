@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 const ROLES_API_URL = "http://localhost:8000/api/roles/roles/";
-const USERS_API_URL = "http://localhost:8000/api/users/users/";
+const USERS_API_URL = "http://localhost:8000/api/users/users/?staff_only=true";
 const PERMISSIONS_API_URL = "http://localhost:8000/api/roles/permissions/";
 
 function RoleManagement() {
@@ -26,7 +26,9 @@ function RoleManagement() {
         fetch(USERS_API_URL)
             .then(res => res.json())
             .then(data => {
-                setAccounts(Array.isArray(data) ? data : []);
+                // Chỉ lấy staff để tính đúng tổng nhân viên theo role
+                const staffUsers = Array.isArray(data) ? data : [];
+                setAccounts(staffUsers);
             })
             .catch((err) => {
                 console.error("Error fetching users:", err);
@@ -77,11 +79,40 @@ function RoleManagement() {
 
     // Tính lại số lượng nhân viên cho từng role
     useEffect(() => {
-        setRoles(roles => roles.map(role => ({
-            ...role,
-            employees: accounts.filter(u => u.role === role.name).length
-        })));
-    }, [accounts]);
+        if (accounts.length > 0 && roles.length > 0) {
+            setRoles(prevRoles => prevRoles.map(role => {
+                // Đếm số nhân viên có role tương ứng
+                const employeeCount = accounts.filter(account => {
+                    // Kiểm tra theo role name hoặc role id
+                    return account.role === role.name || 
+                           account.role === role.id || 
+                           (account.role_name && account.role_name === role.name);
+                }).length;
+                return {
+                    ...role,
+                    employees: employeeCount
+                };
+            }));
+        }
+    }, [accounts, roles.length]);
+
+    // Tính lại số lượng nhân viên cho từng role khi có thay đổi
+    const updateEmployeeCounts = () => {
+        if (accounts.length > 0 && roles.length > 0) {
+            setRoles(prevRoles => prevRoles.map(role => {
+                const employeeCount = accounts.filter(account => {
+                    return account.role === role.name || 
+                           account.role === role.id || 
+                           (account.role_name && account.role_name === role.name);
+                }).length;
+                return {
+                    ...role,
+                    employees: employeeCount
+                };
+            }));
+        }
+    };
+
     const [editRole, setEditRole] = useState(null);
     const [viewRole, setViewRole] = useState(null);
     const handleEdit = role => {
@@ -148,14 +179,14 @@ function RoleManagement() {
             })
         });
         if (res.ok) {
-            // Sau khi tạo thành công, fetch lại danh sách role
+            // Sau khi tạo thành công, fetch lại danh sách role và cập nhật số nhân viên
             fetch(ROLES_API_URL)
                 .then(res => res.json())
                 .then(data => {
-                    setRoles(Array.isArray(data) ? data.map(r => ({
-                        ...r,
-                        employees: accounts.filter(u => u.role === r.name).length,
-                    })) : []);
+                    const newRoles = Array.isArray(data) ? data : [];
+                    setRoles(newRoles);
+                    // Cập nhật số nhân viên sau khi có roles mới
+                    setTimeout(() => updateEmployeeCounts(), 100);
                 });
         } else {
             const errorData = await res.json().catch(() => null);
@@ -174,6 +205,8 @@ function RoleManagement() {
                 });
                 if (res.ok) {
                     setRoles(roles.filter(r => r.id !== roleId));
+                    // Cập nhật lại số nhân viên sau khi xóa role
+                    setTimeout(() => updateEmployeeCounts(), 100);
                 } else {
                     alert("Failed to delete role from server.");
                 }

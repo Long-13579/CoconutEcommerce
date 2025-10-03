@@ -41,7 +41,7 @@ function AccountForm({ roles, onSave, onCancel }) {
                 <input name="confirmPassword" value={form.confirmPassword} onChange={handleChange} className="border p-2 rounded w-full mb-2" type="password" required />
                 <label className="block mb-2 font-semibold">Role</label>
                 <select name="role" value={form.role} onChange={e => setForm({ ...form, role: Number(e.target.value) })} className="border p-2 rounded w-full mb-4">
-                    {roles.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+                    {roles.map(r => <option key={r.id} value={r.id}>{r.value}</option>)}
                 </select>
                 <div className="flex justify-end gap-2 mt-2">
                     <button type="button" className="px-4 py-2 rounded bg-gray-300" onClick={onCancel}>Cancel</button>
@@ -82,8 +82,8 @@ function Accounts() {
                 // data: [{id, name, description, permissions}]
                 setRoles(Array.isArray(data) ? data.map(r => ({
                     id: r.id,
-                    value: r.name, // giữ lại để tương thích các chỗ khác
-                    label: r.description || r.name,
+                    value: r.name,
+                    label: r.name, // hiển thị role name thay vì description
                     permissions: r.permissions || [],
                 })) : []);
             })
@@ -261,7 +261,7 @@ function Accounts() {
                                             <td className="p-2 w-56 text-left">{u.email}</td>
                                             <td className="p-2 w-32 text-left">
                                                 {roleObj ? (
-                                                    <span title={roleObj.permissions.join(", ")}>{roleObj.label}</span>
+                                                    <span title={roleObj.permissions.map(p=>p.name).join(", ")}>{roleObj.value}</span>
                                                 ) : (
                                                     u.role_name || u.role
                                                 )}
