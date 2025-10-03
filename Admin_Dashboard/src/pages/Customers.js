@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PageTitle from "../components/Typography/PageTitle";
 import ChartCard from "../components/Chart/ChartCard";
 import { Line, Bar } from "react-chartjs-2";
@@ -12,6 +12,37 @@ import {
 
 const Customers = () => {
   const [activeTab, setActiveTab] = useState("basic");
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchCustomers() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("http://localhost:8000/api/users/list/");
+        const contentType = res.headers.get("content-type");
+        if (!res.ok) {
+          const text = await res.text();
+          setError("API error: " + text.substring(0, 150));
+          return;
+        }
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const data = await res.json();
+          setCustomers(Array.isArray(data) ? data : []);
+        } else {
+          const text = await res.text();
+          setError("API returned HTML: " + text.substring(0, 150));
+        }
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCustomers();
+  }, []);
 
   return (
     <div>
@@ -59,9 +90,25 @@ const Customers = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="text-center py-6" colSpan={7}>No data</td>
-              </tr>
+              {loading ? (
+                <tr><td className="text-center py-6" colSpan={7}>Loading...</td></tr>
+              ) : error ? (
+                <tr><td className="text-center text-red-600 py-6" colSpan={7}>{error}</td></tr>
+              ) : customers.length === 0 ? (
+                <tr><td className="text-center py-6" colSpan={7}>No data</td></tr>
+              ) : (
+                customers.map(c => (
+                  <tr key={c.id}>
+                    <td className="border px-4 py-2">{c.id}</td>
+                    <td className="border px-4 py-2">{c.username || "N/A"}</td>
+                    <td className="border px-4 py-2">{c.email}</td>
+                    <td className="border px-4 py-2">{c.phone || ""}</td>
+                    <td className="border px-4 py-2">{c.address || ""}</td>
+                    <td className="border px-4 py-2">{c.joined_on || ""}</td>
+                    <td className="border px-4 py-2">{c.account_status || (c.state ? "Active" : "Inactive")}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
