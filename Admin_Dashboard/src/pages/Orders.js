@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import PageTitle from "../components/Typography/PageTitle";
 import { Card, CardBody, Label, Select, Input, Button } from "@windmill/react-ui";
 import { NavLink } from "react-router-dom";
+import { ReactComponent as EyeIcon } from "../icons/eye.svg";
 
 // Helpers lưu/đọc mốc thời gian vòng đời đơn hàng
 function getLifecycleStore() {
@@ -248,7 +249,13 @@ function Orders() {
                   <td className={`border px-4 py-2 font-bold rounded ${STATUS_COLORS[order.status] || "bg-gray-300"}`}>{order.status}</td>
                   <td className="border px-4 py-2">{renderLifecycleDates(order)}</td>
                   <td className="border px-4 py-2">
-                    <NavLink to={`/orders/${order.id}`} className="text-blue-600 underline mr-2">Details</NavLink>
+                    <NavLink
+                      to={`/orders/${order.id}`}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-black bg-yellow-400 hover:bg-yellow-500 transition mr-2"
+                      title="Xem chi tiết"
+                    >
+                      <EyeIcon className="w-4 h-4" />
+                    </NavLink>
                     {/* Action buttons for each status and role */}
                     {/* Paid: show actions for Sale Staff/Admin */}
                     {order.status === "Paid" && (

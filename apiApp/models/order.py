@@ -1,5 +1,6 @@
 from django.db import models
 from .product import Product
+from .user import CustomUser
 
 class Order(models.Model):
     checkout_id = models.CharField(max_length=255, unique=True)
@@ -18,6 +19,11 @@ class Order(models.Model):
         ]
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="customer", default="2")
+    shipping_street = models.CharField(max_length=50, blank=True, null=True, default="Default Street")
+    shipping_state = models.CharField(max_length=50, blank=True, null=True, default="Default State")
+    shipping_city = models.CharField(max_length=50, blank=True, null=True, default="Default City")
+    shipping_phone = models.CharField(max_length=13, blank=True, null=True, default="123456789")
 
     def __str__(self):
         return f"Order {self.checkout_id} - {self.status}"

@@ -27,13 +27,6 @@ def update_order_status(request, order_id):
             Delivery.objects.create(order=order, status="Pending from Delivery")
 
     return Response({"success": True, "order_id": order.id, "new_status": order.status})
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from ..models.order import Order
-from ..models.user import CustomUser
-from .order_views import OrderItem
-from ..serializers.order_detail_serializers import OrderDetailSerializer
 
 @api_view(["GET"])
 def order_detail(request, order_id):

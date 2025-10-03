@@ -1,6 +1,8 @@
 from django.core.management.base import BaseCommand
 from apiApp.models.order import Order, OrderItem
 from apiApp.models.product import Product
+from apiApp.models.user import CustomUser
+from apiApp.models.address import CustomerAddress
 from django.utils import timezone
 import random
 
@@ -8,8 +10,21 @@ class Command(BaseCommand):
     help = 'Seed sample orders and order items for testing (no user fields)'
 
     def handle(self, *args, **kwargs):
-        # Use static emails for clients
-        emails = [f'user{i+1}@example.com' for i in range(3)]
+        # Make default User
+        user = CustomUser.objects.create(
+            email = "user@gmail.com",
+            username = "Default User",
+        )
+        user.set_password("123456")  
+        user.save()
+        #Make default Address
+        address = CustomerAddress.objects.create(
+            customer = user,
+            street = "Default Street",
+            state = "Default State",
+            city = "Default City",
+            phone = "12345689"
+        )
         # Create some sample products if not exist
         products = list(Product.objects.all())
         if not products:
@@ -22,14 +37,18 @@ class Command(BaseCommand):
                 products.append(p)
         # Create sample orders
         for i in range(5):
-            email = random.choice(emails)
             order = Order.objects.create(
                 checkout_id=f'ORDER_{i+1}_TEST',
                 amount=random.randint(100, 1000),
                 currency='VND',
-                customer_email=email,
+                customer_email=user.email,
                 status=random.choice(['Paid', 'Pending from Inventory']),
-                created_at=timezone.now()
+                created_at=timezone.now(),
+                user = user,
+                shipping_street = address.street,
+                shipping_state = address.state,
+                shipping_city = address.city,
+                shipping_phone = address.phone,
             )
             # Add order items
             for _ in range(random.randint(1, 3)):
