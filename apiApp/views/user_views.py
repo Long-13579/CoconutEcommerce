@@ -19,6 +19,8 @@ def login_view(request):
             "role": role_name,
             "email": user.email,
             "username": user.username,
+            "is_superuser": bool(getattr(user, "is_superuser", False)),
+            "is_staff_account": bool(getattr(user, "is_staff_account", False)),
         })
     return Response({"detail": "Invalid credentials"}, status=400)
 from rest_framework.decorators import api_view
@@ -99,6 +101,8 @@ def login(request):
         "role": role_name,
         "email": user.email,
         "username": user.username,
+        "is_superuser": bool(getattr(user, "is_superuser", False)),
+        "is_staff_account": bool(getattr(user, "is_staff_account", False)),
     })
 
 

@@ -186,7 +186,7 @@ const Customers = () => {
                           >Cancel</button>
                         </>
                       ) : (
-                        canManage ? (
+                        canManage ? ( //ẩn nút update status cho user không phải admin hoặc superuser
                           <button
                             className="px-2 py-1 rounded bg-yellow-400 text-black hover:bg-yellow-500"
                             onClick={() => setEditingStatus(prev => ({ ...prev, [c.id]: true }))}

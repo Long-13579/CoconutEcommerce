@@ -11,11 +11,31 @@ export const menuByRole = {
   ],
   staff_inventory: ["Dashboard", "Products", "Profile", "Settings", "Logout"],
   staff_support: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
-  staff_delivery: ["Dashboard", "Orders", "Delivery", "Profile", "Settings", "Logout"],
-  staff_sale: ["Dashboard", "Orders", "Customers", "Chats", "Delivery", "Profile", "Settings", "Logout"],
+  staff_delivery: ["Dashboard", "Delivery", "Profile", "Settings", "Logout"],
+  staff_sale: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
 };
 
-const routes = [
+// Lọc routes theo role đã lưu trong storage bằng cách dùng menuByRole và baseRoutes  
+// baseRoutes là các routes mặc định
+// menuByRole là các routes mà mỗi role có thể truy cập
+// getAllowedRoutes là hàm để lọc routes theo role đã lưu trong storage
+// localStorage là lưu trữ dữ liệu trong trình duyệt cho đến khi người dùng xóa
+// sessionStorage là lưu trữ dữ liệu trong trình duyệt cho đến khi người dùng đóng trình duyệt
+function getAllowedRoutes() {
+  const role =
+    (typeof localStorage !== 'undefined' && (localStorage.getItem('role') || localStorage.getItem('user_role'))) ||
+    (typeof sessionStorage !== 'undefined' && (sessionStorage.getItem('role') || sessionStorage.getItem('user_role'))) ||
+    '';
+  const allow = (menuByRole[role] || menuByRole['staff_support'] || []).reduce((set, name) => (set.add(name), set), new Set());
+
+  const filterTree = (items) => items
+    .filter(item => allow.has(item.name))
+    .map(item => item.routes ? { ...item, routes: filterTree(item.routes) } : item);
+
+  return filterTree(baseRoutes);
+}
+
+const baseRoutes = [
   {
     path: "/dashboard", // the url
     icon: "HomeIcon", // the component being exported from icons/index.js
@@ -80,5 +100,7 @@ const routes = [
     name: "Logout",
   },
 ];
+
+const routes = getAllowedRoutes();
 
 export default routes;
