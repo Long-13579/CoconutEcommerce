@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import PageTitle from "../components/Typography/PageTitle";
 
 // API endpoint URL
-const API_URL = "http://localhost:8000/users/users/?staff_only=true";
-const ROLES_API_URL = "http://localhost:8000/roles/roles/";
+const API_URL = "http://localhost:8000/api/users/users/?staff_only=true";
+const ROLES_API_URL = "http://localhost:8000/api/roles/roles/";
 
 function AccountForm({ roles, onSave, onCancel }) {
     const [form, setForm] = useState({
