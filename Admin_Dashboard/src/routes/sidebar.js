@@ -76,6 +76,11 @@ const baseRoutes = [
     name: "Delivery",
   },
   {
+    path: "/discounts",
+    icon: "MoneyIcon",
+    name: "Discounts"
+  },
+  {
     path: "/chats",
     icon: "ChatIcon",
     name: "Chats",

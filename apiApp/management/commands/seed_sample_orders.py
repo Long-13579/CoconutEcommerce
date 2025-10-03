@@ -56,6 +56,7 @@ class Command(BaseCommand):
                 OrderItem.objects.create(
                     order=order,
                     product=product,
-                    quantity=random.randint(1, 5)
+                    quantity=random.randint(1, 5),
+                    price = 100
                 )
         self.stdout.write(self.style.SUCCESS('Sample orders and order items created.'))
