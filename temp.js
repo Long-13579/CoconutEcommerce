@@ -1,295 +1,199 @@
-import React, { useState, useEffect } from "react";
-import PageTitle from "../components/Typography/PageTitle";
-import ChartCard from "../components/Chart/ChartCard";
-import { Line, Bar } from "react-chartjs-2";
-import ChartLegend from "../components/Chart/ChartLegend";
-import {
-  lineOptions,
-  lineLegends,
-  realTimeUsersBarLegends,
-  realTimeUsersBarOptions,
-} from "../utils/demo/chartsData";
+from rest_framework.response import Response
+from rest_framework import status
+from functools import wraps
 
-const Customers = () => {
-  const [activeTab, setActiveTab] = useState("basic");
-  const [customers, setCustomers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [editingStatus, setEditingStatus] = useState({}); // { [customerId]: true/false }
-  const [pendingStatus, setPendingStatus] = useState({}); // { [customerId]: "Active"|... }
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
+def role_required(allowed_roles):
+	def decorator(view_func):
+		@wraps(view_func)
+		def _wrapped_view(request, *args, **kwargs):
+			user = getattr(request, 'user', None)
+			# Chưa xác thực
+			if not user or not getattr(user, 'is_authenticated', False):
+				return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+			# Cho phép superuser hoặc staff đặc biệt
+			if getattr(user, 'is_superuser', False) or getattr(user, 'is_staff_account', False):
+				return view_func(request, *args, **kwargs)
+			# Kiểm tra theo role tên
+			if hasattr(user, 'role') and user.role and user.role.name in allowed_roles:
+				return view_func(request, *args, **kwargs)
+			return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+		return _wrapped_view
+	return decorator
+-----------permissions.py-----------
 
-  useEffect(() => {
-    async function fetchCustomers() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("http://localhost:8000/api/users/list/");
-        const contentType = res.headers.get("content-type");
-        if (!res.ok) {
-          const text = await res.text();
-          setError("API error: " + text.substring(0, 150));
-          return;
-        }
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-          const data = await res.json();
-          setCustomers(Array.isArray(data) ? data : []);
-        } else {
-          const text = await res.text();
-          setError("API returned HTML: " + text.substring(0, 150));
-        }
-      } catch (e) {
-        setError(e.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchCustomers();
-  }, []);
+---------user_views.py-----------
 
-  return (
-    <div>
-      <PageTitle>Manage Customers</PageTitle>
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+# API login trả về JWT và role
+from rest_framework.decorators import api_view
+@api_view(["POST"])
+def login_view(request):
+    email = request.data.get("email")
+    password = request.data.get("password")
+    user = authenticate(request, username=email, password=password)
+    if user is not None:
+        # Only allow admin and staff accounts to login
+        if not getattr(user, "is_staff_account", False) and not getattr(user, "is_superuser", False):
+            return Response({"detail": "You do not have permission to access the admin dashboard."}, status=403)
+        refresh = RefreshToken.for_user(user)
+        role_name = user.role.name if user.role else ""
+        return Response({
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "role": role_name,
+            "email": user.email,
+            "username": user.username,
+        })
+    return Response({"detail": "Invalid credentials"}, status=400)
+from rest_framework.decorators import api_view
+from apiApp.utils.permissions import role_required
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth import get_user_model
+from ..models import CustomerAddress
+from ..serializers import UserSerializer, CustomerAddressSerializer
 
-      <div className="grid gap-6 mb-8 md:grid-cols-2">
-        <ChartCard title="User Details">
-          <Line {...lineOptions} />
-          <ChartLegend legends={lineLegends} />
-        </ChartCard>
+from rest_framework import viewsets
+from apiApp.models.user import CustomUser
 
-        <ChartCard title="Online Visitors">
-          <Bar {...realTimeUsersBarOptions} />
-          <ChartLegend legends={realTimeUsersBarLegends} />
-        </ChartCard>
-      </div>
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
 
-      <div className="mb-4 flex gap-2">
-        <button
-          className={`px-4 py-2 rounded ${activeTab === "basic" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-          onClick={() => setActiveTab("basic")}
-        >Basic Info</button>
-        <button
-          className={`px-4 py-2 rounded ${activeTab === "orders" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-          onClick={() => setActiveTab("orders")}
-        >Orders Overview</button>
-        <button
-          className={`px-4 py-2 rounded ${activeTab === "activity" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
-          onClick={() => setActiveTab("activity")}
-        >Customer Activity & CRM Info</button>
-      </div>
+    def get_queryset(self):
+        # For unsafe methods (DELETE, PUT, PATCH), always return all users
+        if self.request.method not in ['GET', 'HEAD', 'OPTIONS']:
+            return CustomUser.objects.all()
+        staff_only = self.request.query_params.get('staff_only')
+        if staff_only == 'true':
+            return CustomUser.objects.filter(is_staff_account=True)
+        # Mặc định chỉ trả về customer (is_staff_account=False)
+        return CustomUser.objects.filter(is_staff_account=False)
 
-      {activeTab === "basic" ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto bg-white rounded shadow">
-            <thead>
-              <tr>
-                <th className="px-4 py-2">Customer ID</th>
-                <th className="px-4 py-2">Full Name</th>
-                <th className="px-4 py-2">Email</th>
-                <th className="px-4 py-2">Phone</th>
-                <th className="px-4 py-2">Address</th>
-                <th className="px-4 py-2">Joined Date</th>
-                <th className="px-4 py-2">Account Status</th>
-                <th className="px-4 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td className="text-center py-6" colSpan={7}>Loading...</td></tr>
-              ) : error ? (
-                <tr><td className="text-center text-red-600 py-6" colSpan={7}>{error}</td></tr>
-              ) : customers.length === 0 ? (
-                <tr><td className="text-center py-6" colSpan={8}>No data</td></tr>
-              ) : (
-                customers.map(c => (
-                  <tr key={c.id}>
-                    <td className="border px-4 py-2">{c.id}</td>
-                    <td className="border px-4 py-2">{c.username || "N/A"}</td>
-                    <td className="border px-4 py-2">{c.email}</td>
-                    <td className="border px-4 py-2">{c.phone || ""}</td>
-                    <td className="border px-4 py-2">{c.address || ""}</td>
-                    <td className="border px-4 py-2">{c.joined_on || ""}</td>
-                    <td className="border px-4 py-2">
-                      {editingStatus[c.id] ? (
-                        <select
-                          className="px-2 py-1 rounded border"
-                          value={pendingStatus[c.id] ?? (c.account_status || (c.state ? "Active" : "Inactive"))}
-                          onChange={e => setPendingStatus(prev => ({ ...prev, [c.id]: e.target.value }))}
-                        >
-                          <option>Active ✅</option>
-                          <option>Inactive ⏸️</option>
-                          <option>Blocked 🚫</option>
-                          <option>Deleted 🗑️</option>
-                        </select>
-                      ) : (
-                        <span>{pendingStatus[c.id] ?? (c.account_status || (c.state ? "Active" : "Inactive"))}</span>
-                      )}
-                    </td>
-                    <td className="border px-4 py-2">
-                      <button
-                        className="mr-2 px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
-                        onClick={() => { setSelectedCustomer(c); setDetailOpen(true); }}
-                      >Details</button>
-                      {editingStatus[c.id] ? (
-                        <>
-                          <button
-                            className="mr-2 px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
-                            onClick={async () => {
-                              const raw = pendingStatus[c.id] ?? (c.account_status || (c.state ? "Active" : "Inactive"));
-                              // Normalize value without emoji for backend
-                              const normalized = raw.split(" ")[0];
-                              try {
-                                const res = await fetch(`http://localhost:8000/api/users/update_status/${c.id}/`, {
-                                  method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ status: raw })
-                                });
-                                if (!res.ok) {
-                                  const text = await res.text();
-                                  alert("Update failed: " + text.substring(0, 120));
-                                  return;
-                                }
-                                const data = await res.json();
-                                setCustomers(prev => prev.map(u => u.id === c.id ? { ...u, account_status: data.account_status, state: data.account_status === "Active" } : u));
-                                setEditingStatus(prev => ({ ...prev, [c.id]: false }));
-                              } catch (e) {
-                                alert("Network error");
-                              }
-                            }}
-                          >Save</button>
-                          <button
-                            className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
-                            onClick={() => setEditingStatus(prev => ({ ...prev, [c.id]: false }))}
-                          >Cancel</button>
-                        </>
-                      ) : (
-                        <button
-                          className="px-2 py-1 rounded bg-yellow-400 text-black hover:bg-yellow-500"
-                          onClick={() => setEditingStatus(prev => ({ ...prev, [c.id]: true }))}
-                        >Update Status</button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      ) : activeTab === "orders" ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto bg-white rounded shadow">
-            <thead>
-              <tr>
-                <th className="px-4 py-2">Customer ID</th>
-                <th className="px-4 py-2">Total Orders</th>
-                <th className="px-4 py-2">Lifetime Value</th>
-                <th className="px-4 py-2">Latest Order Status</th>
-                <th className="px-4 py-2">Order History</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="text-center py-6" colSpan={5}>No data</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto bg-white rounded shadow">
-            <thead>
-              <tr>
-                <th className="px-4 py-2">Customer ID</th>
-                <th className="px-4 py-2">Cancelled Orders</th>
-                <th className="px-4 py-2">Loyalty Points</th>
-                <th className="px-4 py-2">Customer Reviews</th>
-                <th className="px-4 py-2">Customer Segment</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="text-center py-6" colSpan={5}>No data</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
-      {detailOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black opacity-30" onClick={() => setDetailOpen(false)}></div>
-          <div className="relative bg-white rounded shadow-lg w-full max-w-4xl mx-4 p-6 overflow-y-auto max-h-[85vh]">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Customer Details</h2>
-              <button className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300" onClick={() => setDetailOpen(false)}>Close</button>
-            </div>
-            {/* Profile Info */}
-            <div className="mb-6">
-              <h3 className="text-md font-bold mb-2">Profile Info</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div><span className="font-medium">Full Name:</span> {selectedCustomer?.username || "N/A"}</div>
-                <div><span className="font-medium">Email:</span> {selectedCustomer?.email || ""}</div>
-                <div><span className="font-medium">Phone:</span> {selectedCustomer?.phone || ""}</div>
-                <div><span className="font-medium">Default Address:</span> {selectedCustomer?.address || ""}</div>
-                <div><span className="font-medium">Joined:</span> {selectedCustomer?.joined_on || ""}</div>
-                <div><span className="font-medium">Status:</span> {selectedCustomer?.account_status || (selectedCustomer?.state ? "Active" : "Inactive")}</div>
-              </div>
-            </div>
-            {/* Order History */}
-            <div className="mb-6">
-              <h3 className="text-md font-bold mb-2">Order History</h3>
-              <div className="mb-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div><span className="font-medium">Total Orders:</span> 0</div>
-                <div><span className="font-medium">Lifetime Value:</span> 0</div>
-                <div><span className="font-medium">Latest Order Status:</span> -</div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full table-auto bg-white rounded border">
-                  <thead>
-                    <tr>
-                      <th className="px-3 py-2">Order ID</th>
-                      <th className="px-3 py-2">Placed Date</th>
-                      <th className="px-3 py-2">Amount</th>
-                      <th className="px-3 py-2">Delivery Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="text-center py-4" colSpan={4}>No orders</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            {/* Payment & Loyalty */}
-            <div className="mb-6">
-              <h3 className="text-md font-bold mb-2">Payment & Loyalty</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div><span className="font-medium">Preferred Payment Method:</span> -</div>
-                <div><span className="font-medium">Loyalty Points:</span> 0</div>
-                <div><span className="font-medium">Vouchers:</span> -</div>
-                <div><span className="font-medium">Cancelled Orders:</span> 0</div>
-              </div>
-            </div>
-            {/* CRM Info */}
-            <div className="mb-2">
-              <h3 className="text-md font-bold mb-2">CRM</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div><span className="font-medium">Customer Segment:</span> -</div>
-                <div><span className="font-medium">Engagement (logins/orders):</span> -</div>
-                <div className="md:col-span-2"><span className="font-medium">Internal Notes:</span>
-                  <div className="mt-1 p-2 border rounded text-sm text-gray-700">-</div>
-                </div>
-                <div className="md:col-span-2"><span className="font-medium">Customer Reviews:</span>
-                  <div className="mt-1 p-2 border rounded text-sm text-gray-700">No reviews</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        role_id = data.get("role")
+        role_obj = None
+        if role_id:
+            from apiApp.models.role import Role
+            try:
+                role_obj = Role.objects.get(id=role_id)
+            except Role.DoesNotExist:
+                role_obj = None
+        data["role"] = role_obj.id if role_obj else None
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-export default Customers;
+        @role_required(['admin'])
+        def destroy(self, request, *args, **kwargs):
+            # Chỉ admin mới được xóa user
+            return super().destroy(request, *args, **kwargs)
+User = get_user_model()
+
+
+@api_view(["POST"])
+def create_user(request):
+    serializer = UserSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    user = serializer.save() 
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        "user": serializer.data,
+        "access": str(refresh.access_token),
+        "refresh": str(refresh)
+    })
+
+@api_view(["POST"])
+def login(request):
+    email = request.data.get("email")
+    password = request.data.get("password")
+    user = authenticate(request, username=email, password=password)
+
+    if user is None:
+        return Response({"error": "Invalid email or password"}, status=status.HTTP_400_BAD_REQUEST)
+
+    refresh = RefreshToken.for_user(user)
+    role_name = user.role.name if user.role else ""
+    return Response({
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+        "role": role_name,
+        "email": user.email,
+        "username": user.username,
+    })
+
+
+@api_view(["GET"])
+def existing_user(request, email):
+    exists = User.objects.filter(email=email).exists()
+    return Response({"exists": exists}, status=status.HTTP_200_OK if exists else status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+def add_address(request):
+    email = request.data.get("email")
+    customer = User.objects.get(email=email)
+
+    address, _ = CustomerAddress.objects.get_or_create(customer=customer)
+    address.street = request.data.get("street")
+    address.city = request.data.get("city")
+    address.state = request.data.get("state")
+    address.phone = request.data.get("phone")
+    address.save()
+
+    serializer = CustomerAddressSerializer(address)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+def get_address(request):
+    email = request.query_params.get("email")
+    address = CustomerAddress.objects.filter(customer__email=email).last()
+    if address:
+        serializer = CustomerAddressSerializer(address)
+        return Response(serializer.data)
+    return Response({"error": "Address not found"}, status=200)
+
+@api_view(["GET"])
+def user_list(request):
+    # Only return customers (not staff)
+    users = User.objects.filter(is_staff_account=False)
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)
+
+
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.decorators import authentication_classes, permission_classes
+
+@api_view(["PATCH"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
+@role_required(['admin'])
+def update_user_status(request, user_id: int):
+    try:
+        user = CustomUser.objects.get(id=user_id)
+    except CustomUser.DoesNotExist:
+        return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    new_status = request.data.get("status")
+    if new_status not in ["Active ✅", "Inactive ⏸️", "Blocked 🚫", "Deleted 🗑️", "Active", "Inactive", "Blocked", "Deleted"]:
+        return Response({"detail": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Persist minimal mapping using is_active
+    if new_status.startswith("Active"):
+        user.is_active = True
+    else:
+        user.is_active = False
+
+    user.save(update_fields=["is_active"]) 
+
+    return Response({
+        "id": user.id,
+        "account_status": "Active" if user.is_active else "Inactive",
+        "stored": new_status
+    })

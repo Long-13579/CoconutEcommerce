@@ -115,7 +115,10 @@ const Customers = () => {
                         <select
                           className="px-2 py-1 rounded border"
                           value={pendingStatus[c.id] ?? (c.account_status || (c.state ? "Active" : "Inactive"))}
-                          onChange={e => setPendingStatus(prev => ({ ...prev, [c.id]: e.target.value }))}
+                          onChange={(e) => {
+                            const { value } = e.target;   // copy ra biến trước
+                            setPendingStatus(prev => ({ ...prev, [c.id]: value }));
+                          }}                          
                         >
                           <option>Active ✅</option>
                           <option>Inactive ⏸️</option>
@@ -140,9 +143,16 @@ const Customers = () => {
                               // Normalize value without emoji for backend
                               const normalized = raw.split(" ")[0];
                               try {
+                                const token =
+                                  (typeof localStorage !== "undefined" && (localStorage.getItem("access") || localStorage.getItem("token"))) ||
+                                  (typeof sessionStorage !== "undefined" && (sessionStorage.getItem("access") || sessionStorage.getItem("token"))) ||
+                                  "";
                                 const res = await fetch(`http://localhost:8000/api/users/update_status/${c.id}/`, {
                                   method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                                  },
                                   body: JSON.stringify({ status: raw })
                                 });
                                 if (!res.ok) {
