@@ -51,9 +51,22 @@ function Delivery() {
                     setDeliveries(data);
                     // Set initial selected shipper for each delivery
                     const initialSelected = {};
+                    // Load saved assignments from localStorage to persist through reloads
+                    let savedAssignments = {};
+                    try {
+                        savedAssignments = JSON.parse(localStorage.getItem("assignedShippers") || "{}");
+                    } catch (_) {
+                        savedAssignments = {};
+                    }
                     data.forEach(d => {
                         if (d.order && (d.order.status === "Pending from Delivery")) {
-                            initialSelected[d.id] = d.assigned_to && d.assigned_to.email ? d.assigned_to.email : "";
+                            initialSelected[d.id] = d.assigned_to && d.assigned_to.email
+                                ? d.assigned_to.email
+                                : (savedAssignments[d.id] || "");
+                        } else if (d.order && (d.order.status === "Shipping" || d.order.status === "Completed" || d.order.status === "Cancelled")) {
+                            // For non-pending statuses, prefer backend value, fallback to saved
+                            const backendEmail = d.assigned_to && d.assigned_to.email ? d.assigned_to.email : "";
+                            initialSelected[d.id] = backendEmail || savedAssignments[d.id] || "";
                         }
                     });
                     setSelectedShipper(initialSelected);
@@ -89,6 +102,15 @@ function Delivery() {
         setSelectedShipper(prev => ({ ...prev, [deliveryId]: userEmail }));
         // Optionally, refresh deliveries after assignment
         // window.location.reload();
+
+        // Persist assignment locally so it stays visible in Completed tab after reload
+        try {
+            const saved = JSON.parse(localStorage.getItem("assignedShippers") || "{}");
+            saved[deliveryId] = userEmail;
+            localStorage.setItem("assignedShippers", JSON.stringify(saved));
+        } catch (_) {
+            // ignore storage errors
+        }
 
     }
 
