@@ -17,6 +17,8 @@ const Customers = () => {
   const [error, setError] = useState(null);
   const [editingStatus, setEditingStatus] = useState({}); // { [customerId]: true/false }
   const [pendingStatus, setPendingStatus] = useState({}); // { [customerId]: "Active"|... }
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   useEffect(() => {
     async function fetchCustomers() {
@@ -125,7 +127,10 @@ const Customers = () => {
                       )}
                     </td>
                     <td className="border px-4 py-2">
-                      <button className="mr-2 px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Details</button>
+                      <button
+                        className="mr-2 px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+                        onClick={() => { setSelectedCustomer(c); setDetailOpen(true); }}
+                      >Details</button>
                       {editingStatus[c.id] ? (
                         <>
                           <button
@@ -190,6 +195,79 @@ const Customers = () => {
               </tr>
             </tbody>
           </table>
+        </div>
+      )}
+      {detailOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black opacity-30" onClick={() => setDetailOpen(false)}></div>
+          <div className="relative bg-white rounded shadow-lg w-full max-w-4xl mx-4 p-6 overflow-y-auto max-h-[85vh]">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Customer Details</h2>
+              <button className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300" onClick={() => setDetailOpen(false)}>Close</button>
+            </div>
+            {/* Profile Info */}
+            <div className="mb-6">
+              <h3 className="text-md font-bold mb-2">Profile Info</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div><span className="font-medium">Full Name:</span> {selectedCustomer?.username || "N/A"}</div>
+                <div><span className="font-medium">Email:</span> {selectedCustomer?.email || ""}</div>
+                <div><span className="font-medium">Phone:</span> {selectedCustomer?.phone || ""}</div>
+                <div><span className="font-medium">Default Address:</span> {selectedCustomer?.address || ""}</div>
+                <div><span className="font-medium">Joined:</span> {selectedCustomer?.joined_on || ""}</div>
+                <div><span className="font-medium">Status:</span> {selectedCustomer?.account_status || (selectedCustomer?.state ? "Active" : "Inactive")}</div>
+              </div>
+            </div>
+            {/* Order History */}
+            <div className="mb-6">
+              <h3 className="text-md font-bold mb-2">Order History</h3>
+              <div className="mb-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div><span className="font-medium">Total Orders:</span> 0</div>
+                <div><span className="font-medium">Lifetime Value:</span> 0</div>
+                <div><span className="font-medium">Latest Order Status:</span> -</div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full table-auto bg-white rounded border">
+                  <thead>
+                    <tr>
+                      <th className="px-3 py-2">Order ID</th>
+                      <th className="px-3 py-2">Placed Date</th>
+                      <th className="px-3 py-2">Amount</th>
+                      <th className="px-3 py-2">Delivery Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="text-center py-4" colSpan={4}>No orders</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {/* Payment & Loyalty */}
+            <div className="mb-6">
+              <h3 className="text-md font-bold mb-2">Payment & Loyalty</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div><span className="font-medium">Preferred Payment Method:</span> -</div>
+                <div><span className="font-medium">Loyalty Points:</span> 0</div>
+                <div><span className="font-medium">Vouchers:</span> -</div>
+                <div><span className="font-medium">Cancelled Orders:</span> 0</div>
+              </div>
+            </div>
+            {/* CRM Info */}
+            <div className="mb-2">
+              <h3 className="text-md font-bold mb-2">CRM</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div><span className="font-medium">Customer Segment:</span> -</div>
+                <div><span className="font-medium">Engagement (logins/orders):</span> -</div>
+                <div className="md:col-span-2"><span className="font-medium">Internal Notes:</span>
+                  <div className="mt-1 p-2 border rounded text-sm text-gray-700">-</div>
+                </div>
+                <div className="md:col-span-2"><span className="font-medium">Customer Reviews:</span>
+                  <div className="mt-1 p-2 border rounded text-sm text-gray-700">No reviews</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
