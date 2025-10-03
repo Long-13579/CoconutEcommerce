@@ -15,6 +15,8 @@ const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingStatus, setEditingStatus] = useState({}); // { [customerId]: true/false }
+  const [pendingStatus, setPendingStatus] = useState({}); // { [customerId]: "Active"|... }
 
   useEffect(() => {
     async function fetchCustomers() {
@@ -87,6 +89,7 @@ const Customers = () => {
                 <th className="px-4 py-2">Address</th>
                 <th className="px-4 py-2">Joined Date</th>
                 <th className="px-4 py-2">Account Status</th>
+                <th className="px-4 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -95,7 +98,7 @@ const Customers = () => {
               ) : error ? (
                 <tr><td className="text-center text-red-600 py-6" colSpan={7}>{error}</td></tr>
               ) : customers.length === 0 ? (
-                <tr><td className="text-center py-6" colSpan={7}>No data</td></tr>
+                <tr><td className="text-center py-6" colSpan={8}>No data</td></tr>
               ) : (
                 customers.map(c => (
                   <tr key={c.id}>
@@ -105,7 +108,45 @@ const Customers = () => {
                     <td className="border px-4 py-2">{c.phone || ""}</td>
                     <td className="border px-4 py-2">{c.address || ""}</td>
                     <td className="border px-4 py-2">{c.joined_on || ""}</td>
-                    <td className="border px-4 py-2">{c.account_status || (c.state ? "Active" : "Inactive")}</td>
+                    <td className="border px-4 py-2">
+                      {editingStatus[c.id] ? (
+                        <select
+                          className="px-2 py-1 rounded border"
+                          value={pendingStatus[c.id] ?? (c.account_status || (c.state ? "Active" : "Inactive"))}
+                          onChange={e => setPendingStatus(prev => ({ ...prev, [c.id]: e.target.value }))}
+                        >
+                          <option>Active ✅</option>
+                          <option>Inactive ⏸️</option>
+                          <option>Blocked 🚫</option>
+                          <option>Deleted 🗑️</option>
+                        </select>
+                      ) : (
+                        <span>{pendingStatus[c.id] ?? (c.account_status || (c.state ? "Active" : "Inactive"))}</span>
+                      )}
+                    </td>
+                    <td className="border px-4 py-2">
+                      <button className="mr-2 px-2 py-1 rounded bg-gray-200 hover:bg-gray-300">Details</button>
+                      {editingStatus[c.id] ? (
+                        <>
+                          <button
+                            className="mr-2 px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
+                            onClick={() => {
+                              // TODO: Integrate API to persist status change
+                              setEditingStatus(prev => ({ ...prev, [c.id]: false }));
+                            }}
+                          >Save</button>
+                          <button
+                            className="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+                            onClick={() => setEditingStatus(prev => ({ ...prev, [c.id]: false }))}
+                          >Cancel</button>
+                        </>
+                      ) : (
+                        <button
+                          className="px-2 py-1 rounded bg-yellow-400 text-black hover:bg-yellow-500"
+                          onClick={() => setEditingStatus(prev => ({ ...prev, [c.id]: true }))}
+                        >Update Status</button>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
