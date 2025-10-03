@@ -194,7 +194,10 @@ function Delivery() {
                                                     )}
                                                     {/* Show Successful Delivery for Shipping */}
                                                     {delivery.order && delivery.order.status === "Shipping" && (
-                                                        <button className="bg-green-700 text-white px-2 py-1 rounded mr-2" onClick={() => updateOrderStatus(delivery.order.id, "Completed")}>Successful Delivery</button>
+                                                        <>
+                                                            <button className="bg-green-700 text-white px-2 py-1 rounded mr-2" onClick={() => updateOrderStatus(delivery.order.id, "Completed")}>Successful Delivery</button>
+                                                            <button className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => updateOrderStatus(delivery.order.id, "Cancelled")}>Failed Delivery</button>
+                                                        </>
                                                     )}
                                                     {/* Completed/Cancelled status */}
                                                     {delivery.order && delivery.order.status === "Completed" && (
