@@ -295,10 +295,10 @@ function Delivery() {
                                                     )}
                                                     {/* Completed/Cancelled status */}
                                                     {delivery.order && delivery.order.status === "Completed" && (
-                                                        <button className="bg-gray-400 text-white px-2 py-1 rounded" disabled>Order Completed</button>
+                                                        <span className="text-green-700 font-medium">Order Delivered Successfully</span>
                                                     )}
                                                     {delivery.order && delivery.order.status === "Cancelled" && (
-                                                        <button className="bg-red-500 text-white px-2 py-1 rounded" disabled>Order Cancelled</button>
+                                                        <span className="text-red-600 font-medium">Order Delivery Failed</span>
                                                     )}
                                                 </td>
                                             </tr>

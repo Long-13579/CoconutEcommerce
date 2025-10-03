@@ -208,6 +208,16 @@ function ProductsInventory() {
                                                         <Button size="small" className="bg-red-500 text-white" onClick={() => updateOrderStatus(order.id, "Cancelled")}>Out of Stock</Button>
                                                     </>
                                                 )}
+                                                {order.status !== "Pending from Inventory" && (
+                                                    <>
+                                                        {(["Pending from Delivery", "Shipping", "Completed"].includes(order.status)) && (
+                                                            <span className="text-green-700 font-medium">Order Handed Over to delivery</span>
+                                                        )}
+                                                        {order.status === "Cancelled" && (
+                                                            <span className="text-red-600 font-medium">Order Rejected</span>
+                                                        )}
+                                                    </>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
