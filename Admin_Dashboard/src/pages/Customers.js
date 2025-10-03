@@ -38,6 +38,10 @@ const Customers = () => {
           className={`px-4 py-2 rounded ${activeTab === "orders" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
           onClick={() => setActiveTab("orders")}
         >Orders Overview</button>
+        <button
+          className={`px-4 py-2 rounded ${activeTab === "activity" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+          onClick={() => setActiveTab("activity")}
+        >Customer Activity & CRM Info</button>
       </div>
 
       {activeTab === "basic" ? (
@@ -61,7 +65,7 @@ const Customers = () => {
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : activeTab === "orders" ? (
         <div className="overflow-x-auto">
           <table className="min-w-full table-auto bg-white rounded shadow">
             <thead>
@@ -71,6 +75,25 @@ const Customers = () => {
                 <th className="px-4 py-2">Lifetime Value</th>
                 <th className="px-4 py-2">Latest Order Status</th>
                 <th className="px-4 py-2">Order History</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="text-center py-6" colSpan={5}>No data</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-auto bg-white rounded shadow">
+            <thead>
+              <tr>
+                <th className="px-4 py-2">Customer ID</th>
+                <th className="px-4 py-2">Cancelled Orders</th>
+                <th className="px-4 py-2">Loyalty Points</th>
+                <th className="px-4 py-2">Customer Reviews</th>
+                <th className="px-4 py-2">Customer Segment</th>
               </tr>
             </thead>
             <tbody>
