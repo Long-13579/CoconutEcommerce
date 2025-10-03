@@ -30,6 +30,7 @@ const AddProduct = () => {
     image: null,
     featured: false,
     category: "",
+    quantity: "",
   });
 
   const handleChange = (e) => {
@@ -59,6 +60,7 @@ const AddProduct = () => {
       }
       data.append("featured", formData.featured ? "true" : "false");
       data.append("category", formData.category);
+      data.append("quantity", formData.quantity);
 
       const res = await fetch("http://127.0.0.1:8000/api/products/create", {
         method: "POST",
@@ -80,6 +82,7 @@ const AddProduct = () => {
         image: null,
         featured: false,
         category: "",
+        quantity: "",
       });
     } catch (err) {
       console.error("❌ Error creating product:", err);
@@ -118,6 +121,18 @@ const AddProduct = () => {
                 onChange={handleChange}
                 className="mb-4"
                 placeholder="Type product name here"
+              />
+            </Label>
+            
+            <FormTitle>Product quantity</FormTitle>
+            <Label>
+              <Input
+                type="number"
+                name="quantity"
+                value={formData.quantity}
+                onChange={handleChange}
+                className="mb-4"
+                placeholder="Enter product quantity here"
               />
             </Label>
 

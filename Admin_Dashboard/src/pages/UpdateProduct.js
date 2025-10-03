@@ -25,6 +25,7 @@ const UpdateProduct = () => {
     featured: false,
     category: "",
     image: null,
+    quantity: "",
   });
 
   const [originalData, setOriginalData] = useState({});
@@ -46,6 +47,7 @@ const UpdateProduct = () => {
           featured: data.featured,
           category: data.category ? data.category.id : "",
           image: data.image || null,
+          quantity: data.quantity ,
         });
         setOriginalData({
           name: data.name,
@@ -55,6 +57,7 @@ const UpdateProduct = () => {
           featured: data.featured,
           category: data.category ? data.category.id : "",
           image: data.image || null,
+          quantity: data.quantity ,
         });
         setLoading(false);
       })
@@ -87,6 +90,7 @@ const UpdateProduct = () => {
     if (formData.featured !== originalData.featured) form.append("featured", formData.featured ? "true" : "false");
     if (formData.category !== originalData.category) form.append("category", formData.category);
     if (formData.image instanceof File) form.append("image", formData.image);
+    if (formData.quantity !== originalData.quantity) form.append("quantity", formData.quantity);
 
     try {
       const res = await fetch(
@@ -136,6 +140,17 @@ const UpdateProduct = () => {
                 className="mb-4"
                 name="name"
                 value={formData.name}
+                onChange={handleChange}
+              />
+            </Label>
+
+            <Label>
+              <span>quantity</span>
+              <Input
+                type="number"
+                className="mb-4"
+                name="quantity"
+                value={formData.quantity}
                 onChange={handleChange}
               />
             </Label>

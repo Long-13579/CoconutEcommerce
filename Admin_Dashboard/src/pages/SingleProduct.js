@@ -26,7 +26,7 @@ const SingleProduct = () => {
           ...data,
           reviews: data.reviews || [],
           rating: data.rating || 0,
-          qty: data.qty || 0,
+          quantity: data.quantity || 0,
           photo: data.image || null, // image từ serializer
           shortDescription: data.description?.slice(0, 50) || "",
           featureDescription: data.description?.slice(0, 100) || "",
@@ -85,10 +85,10 @@ const SingleProduct = () => {
               </h1>
 
               <Badge
-                type={product.qty > 0 ? "success" : "danger"}
+                type={product.quantity > 0 ? "success" : "danger"}
                 className="mb-2"
               >
-                <p>{product.qty > 0 ? `In Stock` : "Out of Stock"}</p>
+                <p>{product.quantity > 0 ? `In Stock` : "Out of Stock"}</p>
               </Badge>
 
               <p className="mb-2 text-sm text-gray-800 dark:text-gray-300">
@@ -109,7 +109,7 @@ const SingleProduct = () => {
                 ${product.price}
               </h4>
               <p className="text-sm text-gray-900 dark:text-gray-400">
-                Product Quantity : {product.qty}
+                Product Quantity : {product.quantity}
               </p>
             </div>
           </div>
