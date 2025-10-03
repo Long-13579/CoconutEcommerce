@@ -135,9 +135,27 @@ const Customers = () => {
                         <>
                           <button
                             className="mr-2 px-2 py-1 rounded bg-blue-500 text-white hover:bg-blue-600"
-                            onClick={() => {
-                              // TODO: Integrate API to persist status change
-                              setEditingStatus(prev => ({ ...prev, [c.id]: false }));
+                            onClick={async () => {
+                              const raw = pendingStatus[c.id] ?? (c.account_status || (c.state ? "Active" : "Inactive"));
+                              // Normalize value without emoji for backend
+                              const normalized = raw.split(" ")[0];
+                              try {
+                                const res = await fetch(`http://localhost:8000/api/users/update_status/${c.id}/`, {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ status: raw })
+                                });
+                                if (!res.ok) {
+                                  const text = await res.text();
+                                  alert("Update failed: " + text.substring(0, 120));
+                                  return;
+                                }
+                                const data = await res.json();
+                                setCustomers(prev => prev.map(u => u.id === c.id ? { ...u, account_status: data.account_status, state: data.account_status === "Active" } : u));
+                                setEditingStatus(prev => ({ ...prev, [c.id]: false }));
+                              } catch (e) {
+                                alert("Network error");
+                              }
                             }}
                           >Save</button>
                           <button
