@@ -13,6 +13,7 @@ const Profile = lazy(() => import("../pages/Profile"));
 const Settings = lazy(() => import("../pages/Settings"));
 const Page404 = lazy(() => import("../pages/404"));
 const Blank = lazy(() => import("../pages/Blank"));
+const OrderDetail = lazy(() => import("../pages/OrderDetail"))
 
 /**
  * ⚠ These are internal routes!
@@ -36,6 +37,10 @@ const routes = [
   {
     path: "/orders",
     component: Orders,
+  },
+  {
+    path: "/orders/:order_id",
+    component: OrderDetail,
   },
   {
     path: "/all-products",

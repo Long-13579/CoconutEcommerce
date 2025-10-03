@@ -31,6 +31,7 @@ def update_order_status(request, order_id):
 @api_view(["GET"])
 def order_detail(request, order_id):
     try:
+        print(order_id)
         order = Order.objects.get(id=order_id)
     except Order.DoesNotExist:
         return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
