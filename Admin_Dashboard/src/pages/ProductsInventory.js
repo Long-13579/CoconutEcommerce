@@ -3,6 +3,74 @@ import React, { useEffect, useState } from "react";
 import PageTitle from "../components/Typography/PageTitle";
 import { Card, CardBody, Button } from "@windmill/react-ui";
 
+// Helpers lưu/đọc lịch sử vòng đời đơn hàng (dùng chung logic với Orders/Delivery)
+function getLifecycleStore() {
+    try {
+        return JSON.parse(localStorage.getItem("orderLifecycleDates") || "{}");
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveLifecycleStore(store) {
+    try {
+        localStorage.setItem("orderLifecycleDates", JSON.stringify(store));
+    } catch (e) {
+        // ignore
+    }
+}
+
+function setLifecycleDate(orderId, field, dateStr) {
+    const store = getLifecycleStore();
+    const id = String(orderId);
+    store[id] = store[id] || {};
+    store[id][field] = dateStr;
+    saveLifecycleStore(store);
+}
+
+function pushLifecycleEvent(orderId, status, dateStr) {
+    const store = getLifecycleStore();
+    const id = String(orderId);
+    store[id] = store[id] || {};
+    const history = Array.isArray(store[id].history) ? store[id].history : [];
+    history.push({ status, at: dateStr });
+    store[id].history = history;
+    saveLifecycleStore(store);
+}
+
+function getLifecycle(orderId) {
+    const store = getLifecycleStore();
+    return store[String(orderId)] || {};
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return "";
+    if (typeof dateStr === "string" && dateStr.includes("T")) {
+        return dateStr.slice(0, 10);
+    }
+    try {
+        return new Date(dateStr).toISOString().slice(0, 10);
+    } catch (e) {
+        return "";
+    }
+}
+
+function renderInventoryDates(order) {
+    const lc = getLifecycle(order.id);
+    const lines = [];
+    // Ngày nhận yêu cầu kiểm kho
+    if (lc.inventory_date) lines.push(`Ngày nhận yêu cầu kiểm kho: ${formatDate(lc.inventory_date)}`);
+    // Ngày đóng gói hoặc Hủy do hết hàng
+    if (lc.packed_date) {
+        lines.push(`Ngày đóng gói: ${formatDate(lc.packed_date)}`);
+    } else if (lc.failed_date) {
+        lines.push(`Ngày hủy do hết hàng: ${formatDate(lc.failed_date)}`);
+    }
+    // Ngày bàn giao cho bên delivery
+    if (lc.handover_date) lines.push(`Ngày bàn giao cho delivery: ${formatDate(lc.handover_date)}`);
+    return lines.length ? lines.map((t, i) => (<div key={i}>{t}</div>)) : null;
+}
+
 // Update order status via API
 async function updateOrderStatus(orderId, newStatus) {
     const response = await fetch(`http://localhost:8000/api/order/${orderId}/update_status/`, {
@@ -11,10 +79,29 @@ async function updateOrderStatus(orderId, newStatus) {
         body: JSON.stringify({ status: newStatus }),
     });
     if (response.ok) {
+        const nowIso = new Date().toISOString();
+        // Khi chuyển sang Pending from Delivery: chỉ lưu ngày bàn giao
+        if (newStatus === "Pending from Delivery") {
+            setLifecycleDate(orderId, "handover_date", nowIso);
+            pushLifecycleEvent(orderId, newStatus, nowIso);
+        }
+        // Khi kho báo hết hàng -> hủy
+        if (newStatus === "Cancelled") {
+            setLifecycleDate(orderId, "failed_date", nowIso);
+            pushLifecycleEvent(orderId, newStatus, nowIso);
+        }
         window.location.reload();
     } else {
         alert("Failed to update order status.");
     }
+}
+
+// Đánh dấu đã đóng gói: chỉ lưu ngày, không đổi trạng thái backend
+function handlePacked(orderId) {
+    const nowIso = new Date().toISOString();
+    setLifecycleDate(orderId, "packed_date", nowIso);
+    pushLifecycleEvent(orderId, "Packed", nowIso);
+    // Không reload để người dùng có thể tiếp tục bấm Hand-over Date hoặc Hủy
 }
 
 function ProductsInventory() {
@@ -82,6 +169,7 @@ function ProductsInventory() {
                                     <th className="px-4 py-2">Order ID</th>
                                     <th className="px-4 py-2">Client</th>
                                     <th className="px-4 py-2">Products</th>
+                                    <th className="px-4 py-2">Dates</th>
                                     <th className="px-4 py-2">Actions</th>
                                 </tr>
                             </thead>
@@ -107,10 +195,12 @@ function ProductsInventory() {
                                                     ))}
                                                 </ul>
                                             </td>
+                                            <td className="border px-4 py-2">{renderInventoryDates(order)}</td>
                                             <td className="border px-4 py-2">
                                                 {order.status === "Pending from Inventory" && (
                                                     <>
-                                                        <Button size="small" className="mr-2 bg-blue-400 text-white" onClick={() => updateOrderStatus(order.id, "Pending from Delivery")}>Packed</Button>
+                                                        <Button size="small" className="mr-2 bg-blue-400 text-white" onClick={() => handlePacked(order.id)}>Packed</Button>
+                                                        <Button size="small" className="mr-2 bg-green-600 text-white" onClick={() => updateOrderStatus(order.id, "Pending from Delivery")}>Hand-over Date</Button>
                                                         <Button size="small" className="bg-red-500 text-white" onClick={() => updateOrderStatus(order.id, "Cancelled")}>Out of Stock</Button>
                                                     </>
                                                 )}
