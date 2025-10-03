@@ -7,6 +7,13 @@ def role_required(allowed_roles):
 		@wraps(view_func)
 		def _wrapped_view(request, *args, **kwargs):
 			user = getattr(request, 'user', None)
+			# Chưa xác thực
+			if not user or not getattr(user, 'is_authenticated', False):
+				return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+			# Chỉ cho phép superuser (không còn mặc định staff)
+			if getattr(user, 'is_superuser', False):
+				return view_func(request, *args, **kwargs)
+			# Kiểm tra theo role tên
 			if hasattr(user, 'role') and user.role and user.role.name in allowed_roles:
 				return view_func(request, *args, **kwargs)
 			return Response({'detail': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)

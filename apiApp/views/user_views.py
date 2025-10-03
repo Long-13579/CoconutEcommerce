@@ -141,7 +141,13 @@ def user_list(request):
     return Response(serializer.data)
 
 
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.decorators import authentication_classes, permission_classes
+
 @api_view(["PATCH"])
+@authentication_classes([JWTAuthentication])
+@permission_classes([IsAuthenticated])
 @role_required(['admin'])
 def update_user_status(request, user_id: int):
     try:
