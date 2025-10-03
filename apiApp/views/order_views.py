@@ -7,7 +7,7 @@ import requests
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from ..models import Cart, Order, OrderItem, CustomUser
+from ..models import Cart, Order, OrderItem, CustomUser, CustomerAddress
 from ..serializers import OrderSerializer, OrderItemSerializer
 from ..utils.token_decode import get_user_id_from_request
 
@@ -122,12 +122,18 @@ def finish_checkout(request):
   return Response(status=200)
 
 def fulfill_checkout(session, user_id):
-    
+    address = CustomerAddress.objects.get(customer_id=user_id)
     order = Order.objects.create(checkout_id=session["id"],
         amount=session["amount_total"],
         currency=session["currency"],
         customer_email=session["customer_email"],
-        status="Paid")
+        status="Paid",
+        user_id=user_id,
+        shipping_street=address.street,
+        shipping_state=address.state,
+        shipping_city=address.city,
+        shipping_phone=address.phone
+    )
 
     cart = Cart.objects.get(user_id=user_id)
     cartitems = cart.cartitems.all()

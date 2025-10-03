@@ -14,4 +14,5 @@ urlpatterns = router.urls + [
     path("get_address/", views.get_address, name="get_address"),
     path("list/", views.user_list, name="user_list"),
     path('login/', login_view, name='login'),
+    path('login_user/', views.login, name='login_user'),
 ]

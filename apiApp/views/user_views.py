@@ -86,16 +86,20 @@ def create_user(request):
 def login(request):
     email = request.data.get("email")
     password = request.data.get("password")
-    user = User.objects.filter(email=email).first()
+    user = authenticate(request, username=email, password=password)
 
     if user is None:
         return Response({"error": "Invalid email or password"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if user.check_password(password):
-        return Response({"error": "Invalid email or password"}, status=status.HTTP_400_BAD_REQUEST)
-
-    serializer = UserSerializer(user)
-    return Response(serializer.data)
+    refresh = RefreshToken.for_user(user)
+    role_name = user.role.name if user.role else ""
+    return Response({
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+        "role": role_name,
+        "email": user.email,
+        "username": user.username,
+    })
 
 
 @api_view(["GET"])
