@@ -4,7 +4,48 @@ import PageTitle from "../components/Typography/PageTitle";
 import { Card, CardBody, Label, Select, Input, Button } from "@windmill/react-ui";
 import { NavLink } from "react-router-dom";
 
-// Hàm cập nhật trạng thái đơn hàng
+// Helpers lưu/đọc mốc thời gian vòng đời đơn hàng
+function getLifecycleStore() {
+  try {
+    return JSON.parse(localStorage.getItem("orderLifecycleDates") || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveLifecycleStore(store) {
+  try {
+    localStorage.setItem("orderLifecycleDates", JSON.stringify(store));
+  } catch (e) {
+    // ignore
+  }
+}
+
+function setLifecycleDate(orderId, field, dateStr) {
+  const store = getLifecycleStore();
+  const id = String(orderId);
+  store[id] = store[id] || {};
+  store[id][field] = dateStr;
+  saveLifecycleStore(store);
+}
+
+function getLifecycle(orderId) {
+  const store = getLifecycleStore();
+  return store[String(orderId)] || {};
+}
+
+// Thêm bản ghi lịch sử trạng thái (không ghi đè)
+function pushLifecycleEvent(orderId, status, dateStr) {
+  const store = getLifecycleStore();
+  const id = String(orderId);
+  store[id] = store[id] || {};
+  const history = Array.isArray(store[id].history) ? store[id].history : [];
+  history.push({ status, at: dateStr });
+  store[id].history = history;
+  saveLifecycleStore(store);
+}
+
+// Hàm cập nhật trạng thái đơn hàng + lưu mốc thời gian
 async function updateStatus(orderId, newStatus) {
   const response = await fetch(`http://localhost:8000/api/order/${orderId}/update_status/`, {
     method: "POST",
@@ -12,6 +53,12 @@ async function updateStatus(orderId, newStatus) {
     body: JSON.stringify({ status: newStatus }),
   });
   if (response.ok) {
+    const nowIso = new Date().toISOString();
+    if (newStatus === "Pending from Inventory") {
+      setLifecycleDate(orderId, "inventory_date", nowIso);
+    }
+    // Lưu lịch sử đầy đủ
+    pushLifecycleEvent(orderId, newStatus, nowIso);
     window.location.reload();
   } else {
     alert("Cập nhật trạng thái thất bại!");
@@ -31,6 +78,37 @@ function formatDate(dateStr) {
   } catch (e) {
     return "";
   }
+}
+
+function renderLifecycleDates(order) {
+  const lc = getLifecycle(order.id);
+  const parts = [];
+  const created = formatDate(order.created_at);
+  if (created) parts.push({ label: "Created", value: created });
+
+  // Nếu có lịch sử thì ưu tiên hiển thị đầy đủ theo thứ tự
+  if (Array.isArray(lc.history) && lc.history.length) {
+    const labelMap = {
+      "Paid": "Paid",
+      "Pending from Inventory": "Inventory",
+      "Pending from Delivery": "Pending Delivery",
+      "Shipping": "Shipped",
+      "Completed": "Completed",
+      "Cancelled": "Failed",
+    };
+    lc.history.forEach((item, idx) => {
+      const label = labelMap[item.status] || item.status;
+      parts.push({ label, value: formatDate(item.at) });
+    });
+  } else {
+    // Fallback: hiển thị theo các field đơn lẻ đã lưu trước đây
+    if (lc.inventory_date) parts.push({ label: "Inventory", value: formatDate(lc.inventory_date) });
+    if (lc.shipped_date) parts.push({ label: "Shipped", value: formatDate(lc.shipped_date) });
+    if (lc.completed_date) parts.push({ label: "Completed", value: formatDate(lc.completed_date) });
+    if (lc.failed_date) parts.push({ label: "Failed", value: formatDate(lc.failed_date) });
+  }
+
+  return parts.length ? parts.map((p, i) => (<div key={i}>{`${p.label}: ${p.value}`}</div>)) : created;
 }
 
 const STATUS_COLORS = {
@@ -146,7 +224,7 @@ function Orders() {
               <th className="px-4 py-2">Order ID</th>
               <th className="px-4 py-2">Amount</th>
               <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Date</th>
+              <th className="px-4 py-2">Dates</th>
               <th className="px-4 py-2">Actions</th>
             </tr>
           </thead>
@@ -168,7 +246,7 @@ function Orders() {
                   <td className="border px-4 py-2">{order.id}</td>
                   <td className="border px-4 py-2">{order.amount} {order.currency}</td>
                   <td className={`border px-4 py-2 font-bold rounded ${STATUS_COLORS[order.status] || "bg-gray-300"}`}>{order.status}</td>
-                  <td className="border px-4 py-2">{formatDate(order.created_at)}</td>
+                  <td className="border px-4 py-2">{renderLifecycleDates(order)}</td>
                   <td className="border px-4 py-2">
                     <NavLink to={`/orders/${order.id}`} className="text-blue-600 underline mr-2">Details</NavLink>
                     {/* Action buttons for each status and role */}

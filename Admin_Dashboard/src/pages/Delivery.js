@@ -3,6 +3,42 @@
 import React, { useEffect, useState } from "react";
 import PageTitle from "../components/Typography/PageTitle";
 
+// Helpers lưu/đọc mốc thời gian vòng đời đơn hàng (dùng chung với Orders)
+function getLifecycleStore() {
+    try {
+        return JSON.parse(localStorage.getItem("orderLifecycleDates") || "{}");
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveLifecycleStore(store) {
+    try {
+        localStorage.setItem("orderLifecycleDates", JSON.stringify(store));
+    } catch (e) {
+        // ignore
+    }
+}
+
+function setLifecycleDate(orderId, field, dateStr) {
+    const store = getLifecycleStore();
+    const id = String(orderId);
+    store[id] = store[id] || {};
+    store[id][field] = dateStr;
+    saveLifecycleStore(store);
+}
+
+// Thêm bản ghi lịch sử trạng thái (không ghi đè)
+function pushLifecycleEvent(orderId, status, dateStr) {
+    const store = getLifecycleStore();
+    const id = String(orderId);
+    store[id] = store[id] || {};
+    const history = Array.isArray(store[id].history) ? store[id].history : [];
+    history.push({ status, at: dateStr });
+    store[id].history = history;
+    saveLifecycleStore(store);
+}
+
 // Update order status via API
 async function updateOrderStatus(orderId, newStatus) {
     const response = await fetch(`http://localhost:8000/api/order/${orderId}/update_status/`, {
@@ -11,6 +47,16 @@ async function updateOrderStatus(orderId, newStatus) {
         body: JSON.stringify({ status: newStatus }),
     });
     if (response.ok) {
+        const nowIso = new Date().toISOString();
+        if (newStatus === "Shipping") {
+            setLifecycleDate(orderId, "shipped_date", nowIso);
+        } else if (newStatus === "Completed") {
+            setLifecycleDate(orderId, "completed_date", nowIso);
+        } else if (newStatus === "Cancelled") {
+            setLifecycleDate(orderId, "failed_date", nowIso);
+        }
+        // Lưu lịch sử đầy đủ
+        pushLifecycleEvent(orderId, newStatus, nowIso);
         window.location.reload();
     } else {
         alert("Failed to update order status.");
