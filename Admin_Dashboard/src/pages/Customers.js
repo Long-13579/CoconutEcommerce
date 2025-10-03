@@ -10,8 +10,9 @@ import {
   realTimeUsersBarOptions,
 } from "../utils/demo/chartsData";
 
+
 const Customers = () => {
-  const [activeTab, setActiveTab] = useState("basic");
+  const [activeTab, setActiveTab] = useState("basic"); 
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,6 +20,17 @@ const Customers = () => {
   const [pendingStatus, setPendingStatus] = useState({}); // { [customerId]: "Active"|... }
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  // Quyền: chỉ admin hoặc superuser được cập nhật
+  const storedRole =
+    (typeof localStorage !== "undefined" && (localStorage.getItem("role") || localStorage.getItem("user_role"))) ||
+    (typeof sessionStorage !== "undefined" && (sessionStorage.getItem("role") || sessionStorage.getItem("user_role"))) ||
+    "";
+  const storedIsSuper =
+    (typeof localStorage !== "undefined" && (localStorage.getItem("is_superuser") || "")) ||
+    (typeof sessionStorage !== "undefined" && (sessionStorage.getItem("is_superuser") || "")) ||
+    "";
+  const canManage = (storedRole || "").toLowerCase() === "admin" || String(storedIsSuper).toLowerCase() === "true";
 
   useEffect(() => {
     async function fetchCustomers() {
@@ -174,10 +186,12 @@ const Customers = () => {
                           >Cancel</button>
                         </>
                       ) : (
-                        <button
-                          className="px-2 py-1 rounded bg-yellow-400 text-black hover:bg-yellow-500"
-                          onClick={() => setEditingStatus(prev => ({ ...prev, [c.id]: true }))}
-                        >Update Status</button>
+                        canManage ? (
+                          <button
+                            className="px-2 py-1 rounded bg-yellow-400 text-black hover:bg-yellow-500"
+                            onClick={() => setEditingStatus(prev => ({ ...prev, [c.id]: true }))}
+                          >Update Status</button>
+                        ) : null
                       )}
                     </td>
                   </tr>

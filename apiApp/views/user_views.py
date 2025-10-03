@@ -141,10 +141,13 @@ def user_list(request):
     return Response(serializer.data)
 
 
-from rest_framework.permissions import IsAuthenticated
+# cập nhật status của user bởi admin 
+from rest_framework.permissions import IsAuthenticated 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.decorators import authentication_classes, permission_classes
 
+# buộc JWT và IsAuthenticated trước khi update_user_status được gọi 
+# và sau đó mới kiểm tra role_required(['admin'])
 @api_view(["PATCH"])
 @authentication_classes([JWTAuthentication])
 @permission_classes([IsAuthenticated])
