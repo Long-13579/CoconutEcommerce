@@ -39,6 +39,19 @@ function pushLifecycleEvent(orderId, status, dateStr) {
     saveLifecycleStore(store);
 }
 
+// Định dạng ngày về dạng YYYY-MM-DD
+function formatDate(dateStr) {
+    if (!dateStr) return "";
+    if (typeof dateStr === "string" && dateStr.includes("T")) {
+        return dateStr.slice(0, 10);
+    }
+    try {
+        return new Date(dateStr).toISOString().slice(0, 10);
+    } catch (e) {
+        return "";
+    }
+}
+
 // Update order status via API
 async function updateOrderStatus(orderId, newStatus) {
     const response = await fetch(`http://localhost:8000/api/order/${orderId}/update_status/`, {
@@ -254,7 +267,7 @@ function Delivery() {
                                                             : (selectedShipper[delivery.id] || "")}
                                                     </span>
                                                 </td>
-                                                <td className="border px-4 py-2">{delivery.created_at}</td>
+                                                <td className="border px-4 py-2">{formatDate(delivery.created_at)}</td>
                                                 <td className="border px-4 py-2">
                                                     {/* Show Start Shipping if status is Pending from Delivery and shipper is selected (assigned_to or selectedShipper) */}
                                                     {delivery.order && delivery.order.status === "Pending from Delivery" && ((delivery.assigned_to && delivery.assigned_to.email) || selectedShipper[delivery.id]) && (

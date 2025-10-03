@@ -59,15 +59,15 @@ function renderInventoryDates(order) {
     const lc = getLifecycle(order.id);
     const lines = [];
     // Ngày nhận yêu cầu kiểm kho
-    if (lc.inventory_date) lines.push(`Ngày nhận yêu cầu kiểm kho: ${formatDate(lc.inventory_date)}`);
+    if (lc.inventory_date) lines.push(`Inventory Request Date: ${formatDate(lc.inventory_date)}`);
     // Ngày đóng gói hoặc Hủy do hết hàng
     if (lc.packed_date) {
-        lines.push(`Ngày đóng gói: ${formatDate(lc.packed_date)}`);
+        lines.push(`Packing Date: ${formatDate(lc.packed_date)}`);
     } else if (lc.failed_date) {
-        lines.push(`Ngày hủy do hết hàng: ${formatDate(lc.failed_date)}`);
+        lines.push(`Cancelled: ${formatDate(lc.failed_date)}`);
     }
     // Ngày bàn giao cho bên delivery
-    if (lc.handover_date) lines.push(`Ngày bàn giao cho delivery: ${formatDate(lc.handover_date)}`);
+    if (lc.handover_date) lines.push(`Hand-over Date: ${formatDate(lc.handover_date)}`);
     return lines.length ? lines.map((t, i) => (<div key={i}>{t}</div>)) : null;
 }
 
@@ -97,18 +97,22 @@ async function updateOrderStatus(orderId, newStatus) {
 }
 
 // Đánh dấu đã đóng gói: chỉ lưu ngày, không đổi trạng thái backend
-function handlePacked(orderId) {
-    const nowIso = new Date().toISOString();
-    setLifecycleDate(orderId, "packed_date", nowIso);
-    pushLifecycleEvent(orderId, "Packed", nowIso);
-    // Không reload để người dùng có thể tiếp tục bấm Hand-over Date hoặc Hủy
-}
+// (moved inside component to access setVersion)
 
 function ProductsInventory() {
     const [orders, setOrders] = useState([]);
     const [activeTab, setActiveTab] = useState("pending");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [version, setVersion] = useState(0);
+
+    const handlePacked = (orderId) => {
+        const nowIso = new Date().toISOString();
+        setLifecycleDate(orderId, "packed_date", nowIso);
+        pushLifecycleEvent(orderId, "Packed", nowIso);
+        // Không reload để người dùng có thể tiếp tục bấm Hand-over Date hoặc Hủy
+        setVersion(v => v + 1);
+    };
 
     useEffect(() => {
         async function fetchOrders() {
@@ -199,7 +203,7 @@ function ProductsInventory() {
                                             <td className="border px-4 py-2">
                                                 {order.status === "Pending from Inventory" && (
                                                     <>
-                                                        <Button size="small" className="mr-2 bg-blue-400 text-white" onClick={() => handlePacked(order.id)}>Packed</Button>
+                                                        <Button size="small" className={`mr-2 text-white ${getLifecycle(order.id).packed_date ? "bg-blue-300 cursor-not-allowed opacity-60" : "bg-blue-400"}`} onClick={() => handlePacked(order.id)} disabled={!!getLifecycle(order.id).packed_date}>Packed</Button>
                                                         <Button size="small" className="mr-2 bg-green-600 text-white" onClick={() => updateOrderStatus(order.id, "Pending from Delivery")}>Hand-over Date</Button>
                                                         <Button size="small" className="bg-red-500 text-white" onClick={() => updateOrderStatus(order.id, "Cancelled")}>Out of Stock</Button>
                                                     </>
