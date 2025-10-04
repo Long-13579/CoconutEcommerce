@@ -245,7 +245,7 @@ const ProductsAll = () => {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm">
-                    {product.category ? product.category.name : "N/A"}
+                    {product.category_name ? product.category_name : "N/A"}
                   </TableCell>
                   <TableCell>
                     <div className="flex">
@@ -316,8 +316,8 @@ const ProductsAll = () => {
                     <p className="mb-2 text-purple-500 font-bold text-lg">
                       ${product.price}
                     </p>
-                    <p className="mb-4 text-sm">
-                      {product.category ? product.category.name : "N/A"}
+                    <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
+                      {product.category_name ? product.category_name : "N/A"}
                     </p>
                     <div className="flex items-center justify-between">
                       <Link to={`/products/${product.slug}`}>

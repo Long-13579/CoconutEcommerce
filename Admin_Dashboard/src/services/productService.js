@@ -12,4 +12,16 @@ export const getProductDetail = async (id) => {
   return await res.json();
 };
 
+export const updateProduct = async (slug, data) => {
+  const res = await fetch(`${API_BASE}${slug}/update`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update product");
+  return await res.json();
+};
+
 // Add more product-related API functions as needed

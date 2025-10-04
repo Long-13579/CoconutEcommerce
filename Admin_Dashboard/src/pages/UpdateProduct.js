@@ -227,7 +227,7 @@ const UpdateProduct = () => {
                   src={
                     formData.image instanceof File
                       ? URL.createObjectURL(formData.image)
-                      : formData.image
+                      : "http://127.0.0.1:8000" + formData.image
                   }
                   alt="Current"
                   className="w-32 mt-2 rounded"

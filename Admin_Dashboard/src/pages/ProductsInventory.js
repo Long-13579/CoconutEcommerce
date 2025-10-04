@@ -106,11 +106,47 @@ function ProductsInventory() {
     const [error, setError] = useState(null);
     const [version, setVersion] = useState(0);
 
-    const handlePacked = (orderId) => {
+    const handlePacked = async (orderId) => {
+        // Lấy chi tiết order
+        let orderDetail;
+        try {
+            const res = await fetch(`http://localhost:8000/api/order/${orderId}/`);
+            if (!res.ok) throw new Error("Không lấy được chi tiết order");
+            orderDetail = await res.json();
+        } catch (err) {
+            alert("Lỗi lấy chi tiết order: " + err.message);
+            return;
+        }
+
+        // Kiểm tra số lượng sản phẩm đủ cho từng item
+        for (const item of orderDetail.items) {
+            const productQty = Number(item.product.quantity);
+            const orderQty = Number(item.quantity);
+            if (productQty < orderQty) {
+                alert(`Sản phẩm "${item.product.name}" không đủ số lượng. Hiện có: ${productQty}, cần: ${orderQty}`);
+                return;
+            }
+        }
+
+        // Nếu đủ, cập nhật số lượng sản phẩm
+        for (const item of orderDetail.items) {
+            const newQty = Number(item.product.quantity) - Number(item.quantity);
+            try {
+                await fetch(`http://localhost:8000/api/products/${item.product.slug}/update`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ quantity: newQty })
+                });
+            } catch (err) {
+                alert(`Lỗi cập nhật số lượng sản phẩm ${item.product.name}`);
+                return;
+            }
+        }
+
+        // Đánh dấu packed
         const nowIso = new Date().toISOString();
         setLifecycleDate(orderId, "packed_date", nowIso);
         pushLifecycleEvent(orderId, "Packed", nowIso);
-        // Không reload để người dùng có thể tiếp tục bấm Hand-over Date hoặc Hủy
         setVersion(v => v + 1);
     };
 

@@ -151,6 +151,7 @@ class Command(BaseCommand):
                     "image": f'product_img{prod["image"]}',
                     "category": category_map.get(prod["category"]),
                     "featured": True,
+                    "quantity": 100
                 },
             )
             if created:
@@ -161,5 +162,6 @@ class Command(BaseCommand):
                 obj.price = prod["price"]
                 obj.image = f'product_img{prod["image"]}'
                 obj.category = category_map.get(prod["category"])
+                obj.quantity = 100
                 obj.save()
                 self.stdout.write(self.style.WARNING(f"Updated product: {obj.name}"))

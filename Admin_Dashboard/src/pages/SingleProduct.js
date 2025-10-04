@@ -72,7 +72,7 @@ const SingleProduct = () => {
             <div>
               {product.photo && (
                 <img
-                  src={product.photo}
+                  src={"http://127.0.0.1:8000" + product.photo}
                   alt={product.name || "Product image"}
                   className="w-full rounded-lg"
                 />
