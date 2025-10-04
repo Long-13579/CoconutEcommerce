@@ -34,7 +34,7 @@ def get_orders(request):
 def create_checkout_session(request):
     user_id = get_user_id_from_request(request)
     #Check address
-    address = CustomerAddress.objects.get(customer_id=user_id)
+    address = CustomerAddress.objects.filter(customer_id=user_id).first()
     if address is None:
       return Response({'error': "User's address is missing"}, status=400)
     user = CustomUser.objects.get(id=user_id)
