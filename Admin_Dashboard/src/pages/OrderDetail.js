@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { getOrderDetail, updateOrderStatus } from "../services/orderService";
 import PageTitle from "../components/Typography/PageTitle";
 
 const OrderDetail = () => {
   const { order_id } = useParams();
+  const location = useLocation();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [updating, setUpdating] = useState(false);
+  
+  // Lấy tham số 'from' từ URL để biết đang từ trang nào
+  const fromPage = new URLSearchParams(location.search).get('from');
 
   useEffect(() => {
     async function fetchOrder() {
@@ -44,10 +48,24 @@ const OrderDetail = () => {
   if (error) return <div className="text-red-500">{error}</div>;
   if (!order) return <div>Không tìm thấy đơn hàng</div>;
 
+  // Xác định link back dựa trên trang nguồn
+  const getBackLink = () => {
+    switch (fromPage) {
+      case 'delivery':
+        return { to: '/delivery', text: '← Back to Delivery Management' };
+      case 'customers':
+        return { to: '/customers', text: '← Back to Customers' };
+      default:
+        return { to: '/orders', text: '← Back to Orders' };
+    }
+  };
+
+  const backLink = getBackLink();
+
   return (
     <div className="p-4">
       <div className="mb-4">
-        <Link to="/orders" className="text-blue-600 hover:underline">← Back to list</Link>
+        <Link to={backLink.to} className="text-blue-600 hover:underline">{backLink.text}</Link>
       </div>
       <PageTitle>Order Detail #{order.id}</PageTitle>
       <div className="bg-white shadow rounded p-6">
