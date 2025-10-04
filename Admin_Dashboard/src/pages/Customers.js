@@ -154,6 +154,41 @@ const Customers = () => {
                               const raw = pendingStatus[c.id] ?? (c.account_status || (c.state ? "Active" : "Inactive"));
                               // Normalize value without emoji for backend
                               const normalized = raw.split(" ")[0];
+                              
+                              // Nếu chọn "Deleted", xóa tài khoản thay vì cập nhật status
+                              if (normalized === "Deleted") {
+                                if (window.confirm(`Bạn có chắc chắn muốn xóa tài khoản của ${c.username || c.email}? Hành động này không thể hoàn tác!`)) {
+                                  try {
+                                    const token =
+                                      (typeof localStorage !== "undefined" && (localStorage.getItem("access") || localStorage.getItem("token"))) ||
+                                      (typeof sessionStorage !== "undefined" && (sessionStorage.getItem("access") || sessionStorage.getItem("token"))) ||
+                                      "";
+                                    const deleteRes = await fetch(`http://localhost:8000/api/users/users/${c.id}/`, {
+                                      method: "DELETE",
+                                      headers: {
+                                        ...(token ? { Authorization: `Bearer ${token}` } : {})
+                                      }
+                                    });
+                                    if (!deleteRes.ok) {
+                                      const text = await deleteRes.text();
+                                      alert("Xóa tài khoản thất bại: " + text.substring(0, 120));
+                                      return;
+                                    }
+                                    // Xóa khỏi danh sách local
+                                    setCustomers(prev => prev.filter(u => u.id !== c.id));
+                                    setEditingStatus(prev => ({ ...prev, [c.id]: false }));
+                                    alert("✅ Đã xóa tài khoản thành công!");
+                                  } catch (e) {
+                                    alert("Lỗi mạng khi xóa tài khoản");
+                                  }
+                                } else {
+                                  // Người dùng hủy xóa, đóng edit mode
+                                  setEditingStatus(prev => ({ ...prev, [c.id]: false }));
+                                }
+                                return;
+                              }
+                              
+                              // Các trường hợp khác (Active, Inactive, Blocked) - cập nhật status
                               try {
                                 const token =
                                   (typeof localStorage !== "undefined" && (localStorage.getItem("access") || localStorage.getItem("token"))) ||
