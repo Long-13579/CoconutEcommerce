@@ -33,6 +33,10 @@ def get_orders(request):
 @api_view(['POST'])
 def create_checkout_session(request):
     user_id = get_user_id_from_request(request)
+    #Check address
+    address = CustomerAddress.objects.get(customer_id=user_id)
+    if address is None:
+      return Response({'error': "User's address is missing"}, status=400)
     user = CustomUser.objects.get(id=user_id)
     email = user.email
     cart = Cart.objects.get(user_id=user_id)
