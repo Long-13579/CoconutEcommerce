@@ -7,9 +7,9 @@
  */
 export const menuByRole = {
   admin: [
-    "Dashboard", "Orders", "Products", "Customers", "Chats", "Delivery", "Profile", "Staff Management", "Settings", "Logout"
+    "Dashboard", "Orders", "Products", "All Products", "Add Product", "Inventory Check", "Customers", "Chats", "Delivery", "Profile", "Staff Management", "Settings", "Logout"
   ],
-  staff_inventory: ["Dashboard", "Products", "Profile", "Settings", "Logout"],
+  staff_inventory: ["Dashboard", "Products", "All Products", "Add Product", "Inventory Check", "Profile", "Settings", "Logout"],
   staff_support: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
   staff_delivery: ["Dashboard", "Delivery", "Profile", "Settings", "Logout"],
   staff_sale: ["Dashboard", "Orders", "Customers", "Chats", "Profile", "Settings", "Logout"],
@@ -47,6 +47,7 @@ const baseRoutes = [
     name: "Orders",
   },
   {
+    path: "/products",
     icon: "TruckIcon",
     name: "Products",
     routes: [
