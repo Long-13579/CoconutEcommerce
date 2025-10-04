@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import PageTitle from "../components/Typography/PageTitle";
 import { Card, CardBody, Button } from "@windmill/react-ui";
@@ -58,15 +57,12 @@ function formatDate(dateStr) {
 function renderInventoryDates(order) {
     const lc = getLifecycle(order.id);
     const lines = [];
-    // Ngày nhận yêu cầu kiểm kho
     if (lc.inventory_date) lines.push(`Inventory Request Date: ${formatDate(lc.inventory_date)}`);
-    // Ngày đóng gói hoặc Hủy do hết hàng
     if (lc.packed_date) {
         lines.push(`Packing Date: ${formatDate(lc.packed_date)}`);
     } else if (lc.failed_date) {
         lines.push(`Cancelled: ${formatDate(lc.failed_date)}`);
     }
-    // Ngày bàn giao cho bên delivery
     if (lc.handover_date) lines.push(`Hand-over Date: ${formatDate(lc.handover_date)}`);
     return lines.length ? lines.map((t, i) => (<div key={i}>{t}</div>)) : null;
 }
@@ -80,12 +76,10 @@ async function updateOrderStatus(orderId, newStatus) {
     });
     if (response.ok) {
         const nowIso = new Date().toISOString();
-        // Khi chuyển sang Pending from Delivery: chỉ lưu ngày bàn giao
         if (newStatus === "Pending from Delivery") {
             setLifecycleDate(orderId, "handover_date", nowIso);
             pushLifecycleEvent(orderId, newStatus, nowIso);
         }
-        // Khi kho báo hết hàng -> hủy
         if (newStatus === "Cancelled") {
             setLifecycleDate(orderId, "failed_date", nowIso);
             pushLifecycleEvent(orderId, newStatus, nowIso);
@@ -96,9 +90,6 @@ async function updateOrderStatus(orderId, newStatus) {
     }
 }
 
-// Đánh dấu đã đóng gói: chỉ lưu ngày, không đổi trạng thái backend
-// (moved inside component to access setVersion)
-
 function ProductsInventory() {
     const [orders, setOrders] = useState([]);
     const [activeTab, setActiveTab] = useState("pending");
@@ -106,48 +97,40 @@ function ProductsInventory() {
     const [error, setError] = useState(null);
     const [version, setVersion] = useState(0);
 
-    const handlePacked = async (orderId) => {
-        // Lấy chi tiết order
-        let orderDetail;
+    // ✅ Hàm kiểm kho và cập nhật
+    const handlePacked = async (order) => {
         try {
-            const res = await fetch(`http://localhost:8000/api/order/${orderId}/`);
-            if (!res.ok) throw new Error("Không lấy được chi tiết order");
-            orderDetail = await res.json();
+            const items = order.items.map(i => ({
+                product_id: i.product.id,
+                quantity: i.quantity
+            }));
+
+            const res = await fetch("http://localhost:8000/api/products/check_and_update_inventory/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items })
+            });
+
+            const data = await res.json();
+
+            if (data.status === "success") {
+                alert("✅ Inventory check successful! Quantities updated.");
+                const nowIso = new Date().toISOString();
+                setLifecycleDate(order.id, "packed_date", nowIso);
+                pushLifecycleEvent(order.id, "Packed", nowIso);
+                setVersion(v => v + 1);
+            } else if (data.status === "failed") {
+                const missing = data.insufficient
+                    .map(p => `- ${p.name} (needed ${p.needed}, available ${p.available})`)
+                    .join("\n");
+                alert("⚠️ Some products are out of stock:\n" + missing);
+            } else {
+                alert("Unexpected response from server");
+            }
         } catch (err) {
-            alert("Lỗi lấy chi tiết order: " + err.message);
-            return;
+            console.error(err);
+            alert("Error checking inventory: " + err.message);
         }
-
-        // Kiểm tra số lượng sản phẩm đủ cho từng item
-        for (const item of orderDetail.items) {
-            const productQty = Number(item.product.quantity);
-            const orderQty = Number(item.quantity);
-            if (productQty < orderQty) {
-                alert(`Sản phẩm "${item.product.name}" không đủ số lượng. Hiện có: ${productQty}, cần: ${orderQty}`);
-                return;
-            }
-        }
-
-        // Nếu đủ, cập nhật số lượng sản phẩm
-        for (const item of orderDetail.items) {
-            const newQty = Number(item.product.quantity) - Number(item.quantity);
-            try {
-                await fetch(`http://localhost:8000/api/products/${item.product.slug}/update`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ quantity: newQty })
-                });
-            } catch (err) {
-                alert(`Lỗi cập nhật số lượng sản phẩm ${item.product.name}`);
-                return;
-            }
-        }
-
-        // Đánh dấu packed
-        const nowIso = new Date().toISOString();
-        setLifecycleDate(orderId, "packed_date", nowIso);
-        pushLifecycleEvent(orderId, "Packed", nowIso);
-        setVersion(v => v + 1);
     };
 
     useEffect(() => {
@@ -155,7 +138,6 @@ function ProductsInventory() {
             setLoading(true);
             setError(null);
             try {
-                // Get orders with status 'Pending from Inventory'
                 const response = await fetch("http://localhost:8000/api/order/get_all_orders/");
                 const contentType = response.headers.get("content-type");
                 if (!response.ok) {
@@ -166,8 +148,6 @@ function ProductsInventory() {
                 if (contentType && contentType.indexOf("application/json") !== -1) {
                     const data = await response.json();
                     setOrders(data);
-
-
                 } else {
                     const text = await response.text();
                     setError("API returned HTML: " + text.substring(0, 200));
@@ -179,7 +159,7 @@ function ProductsInventory() {
             }
         }
         fetchOrders();
-    }, []);
+    }, [version]);
 
     return (
         <div className="w-full flex flex-col flex-grow">
@@ -190,11 +170,15 @@ function ProductsInventory() {
                         <button
                             className={`px-4 py-2 rounded ${activeTab === "pending" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
                             onClick={() => setActiveTab("pending")}
-                        >Processing</button>
+                        >
+                            Processing
+                        </button>
                         <button
                             className={`px-4 py-2 rounded ${activeTab === "processed" ? "bg-green-700 text-white" : "bg-gray-200"}`}
                             onClick={() => setActiveTab("processed")}
-                        >Completed</button>
+                        >
+                            Completed
+                        </button>
                     </div>
                     {loading ? (
                         <div>Loading...</div>
@@ -239,9 +223,35 @@ function ProductsInventory() {
                                             <td className="border px-4 py-2">
                                                 {order.status === "Pending from Inventory" && (
                                                     <>
-                                                        <Button size="small" className={`mr-2 text-white ${getLifecycle(order.id).packed_date ? "bg-blue-300 cursor-not-allowed opacity-60" : "bg-blue-400"}`} onClick={() => handlePacked(order.id)} disabled={!!getLifecycle(order.id).packed_date}>Packed</Button>
-                                                        <Button size="small" className={`mr-2 text-white ${getLifecycle(order.id).packed_date ? "bg-green-600" : "bg-green-300 cursor-not-allowed opacity-60"}`} onClick={() => getLifecycle(order.id).packed_date && updateOrderStatus(order.id, "Pending from Delivery")} disabled={!getLifecycle(order.id).packed_date}>Handover for delivery</Button>
-                                                        <Button size="small" className="bg-red-500 text-white" onClick={() => updateOrderStatus(order.id, "Cancelled")}>Out of Stock</Button>
+                                                        <Button
+                                                            size="small"
+                                                            className={`mr-2 text-white ${getLifecycle(order.id).packed_date
+                                                                ? "bg-blue-300 cursor-not-allowed opacity-60"
+                                                                : "bg-blue-400"
+                                                                }`}
+                                                            onClick={() => handlePacked(order)}
+                                                            disabled={!!getLifecycle(order.id).packed_date}
+                                                        >
+                                                            Packed
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            className={`mr-2 text-white ${getLifecycle(order.id).packed_date
+                                                                ? "bg-green-600"
+                                                                : "bg-green-300 cursor-not-allowed opacity-60"
+                                                                }`}
+                                                            onClick={() => getLifecycle(order.id).packed_date && updateOrderStatus(order.id, "Pending from Delivery")}
+                                                            disabled={!getLifecycle(order.id).packed_date}
+                                                        >
+                                                            Handover for delivery
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            className="bg-red-500 text-white"
+                                                            onClick={() => updateOrderStatus(order.id, "Cancelled")}
+                                                        >
+                                                            Out of Stock
+                                                        </Button>
                                                     </>
                                                 )}
                                                 {order.status !== "Pending from Inventory" && (

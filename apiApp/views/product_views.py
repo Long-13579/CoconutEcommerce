@@ -82,6 +82,62 @@ def product_delete(request, slug):
     product.delete()
     return Response({"message": "Product deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
+@api_view(['POST'])
+def check_and_update_inventory(request):
+    """
+    Kiểm tra tồn kho khi kho bấm 'Packed'.
+    Dữ liệu gửi lên dạng:
+    {
+        "items": [
+            {"product_id": 10, "quantity": 4},
+            {"product_id": 3, "quantity": 5}
+        ]
+    }
+    """
+    items = request.data.get("items", [])
+    if not items:
+        return Response({"error": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+    insufficient = []
+    updated_products = []
+
+    for item in items:
+        pid = item.get("product_id")
+        qty_needed = int(item.get("quantity", 0))
+        try:
+            product = Product.objects.get(id=pid)
+            if product.quantity >= qty_needed:
+                product.quantity -= qty_needed
+                product.save()
+                updated_products.append({
+                    "id": pid,
+                    "name": product.name,
+                    "remaining": product.quantity
+                })
+            else:
+                insufficient.append({
+                    "id": pid,
+                    "name": product.name,
+                    "available": product.quantity,
+                    "needed": qty_needed
+                })
+        except Product.DoesNotExist:
+            insufficient.append({"id": pid, "error": "Product not found"})
+
+    if insufficient:
+        return Response({
+            "status": "failed",
+            "message": "Some products are out of stock",
+            "insufficient": insufficient
+        }, status=status.HTTP_200_OK)
+
+    return Response({
+        "status": "success",
+        "message": "Inventory updated successfully",
+        "updated_products": updated_products
+    }, status=status.HTTP_200_OK)
+
+
 
 
 
