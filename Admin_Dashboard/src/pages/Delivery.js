@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import PageTitle from "../components/Typography/PageTitle";
+import { NavLink } from "react-router-dom";
+import { ReactComponent as EyeIcon } from "../icons/eye.svg";
 
 // Helpers lưu/đọc mốc thời gian vòng đời đơn hàng (dùng chung với Orders)
 function getLifecycleStore() {
@@ -91,6 +93,10 @@ function Delivery() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [assigning, setAssigning] = useState({});
+    const [showFailureModal, setShowFailureModal] = useState(false);
+    const [selectedDelivery, setSelectedDelivery] = useState(null);
+    const [failureReason, setFailureReason] = useState("");
+    const [customReason, setCustomReason] = useState("");
     // ...existing code...
 
     useEffect(() => {
@@ -172,6 +178,33 @@ function Delivery() {
         }
 
     }
+
+    // Handle failed delivery with reason
+    const handleFailedDelivery = (delivery) => {
+        setSelectedDelivery(delivery);
+        setShowFailureModal(true);
+        setFailureReason("");
+        setCustomReason("");
+    };
+
+    const confirmFailedDelivery = () => {
+        if (!failureReason && !customReason) {
+            alert("Vui lòng chọn lý do thất bại hoặc nhập lý do khác");
+            return;
+        }
+        
+        const reason = failureReason === "other" ? customReason : failureReason;
+        console.log(`Delivery failed for order ${selectedDelivery.order.id}: ${reason}`);
+        
+        // Update order status to Cancelled
+        updateOrderStatus(selectedDelivery.order.id, "Cancelled");
+        
+        // Close modal
+        setShowFailureModal(false);
+        setSelectedDelivery(null);
+        setFailureReason("");
+        setCustomReason("");
+    };
 
     // Remove updateDeliveryStatus, use updateOrderStatus for workflow actions
     // Tracking info button removed as requested
@@ -282,6 +315,17 @@ function Delivery() {
                                                     })()}
                                                 </td>
                                                 <td className="border px-4 py-2">
+                                                    {/* View Details Button */}
+                                                    {delivery.order && (
+                                                        <NavLink
+                                                            to={`/orders/${delivery.order.id}`}
+                                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-black bg-yellow-400 hover:bg-yellow-500 transition mr-2"
+                                                            title="Xem chi tiết"
+                                                        >
+                                                            <EyeIcon className="w-4 h-4" />
+                                                        </NavLink>
+                                                    )}
+                                                    
                                                     {/* Show Start Shipping if status is Pending from Delivery and shipper is selected (assigned_to or selectedShipper) */}
                                                     {delivery.order && delivery.order.status === "Pending from Delivery" && ((delivery.assigned_to && delivery.assigned_to.email) || selectedShipper[delivery.id]) && (
                                                         <button className="bg-blue-500 text-white px-2 py-1 rounded mr-2" onClick={() => updateOrderStatus(delivery.order.id, "Shipping")}>Start Shipping</button>
@@ -290,7 +334,7 @@ function Delivery() {
                                                     {delivery.order && delivery.order.status === "Shipping" && (
                                                         <>
                                                             <button className="bg-green-700 text-white px-2 py-1 rounded mr-2" onClick={() => updateOrderStatus(delivery.order.id, "Completed")}>Successful Delivery</button>
-                                                            <button className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => updateOrderStatus(delivery.order.id, "Cancelled")}>Failed Delivery</button>
+                                                            <button className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => handleFailedDelivery(delivery)}>Failed Delivery</button>
                                                         </>
                                                     )}
                                                     {/* Completed/Cancelled status */}
