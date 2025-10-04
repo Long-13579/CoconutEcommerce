@@ -97,6 +97,7 @@ function Delivery() {
     const [selectedDelivery, setSelectedDelivery] = useState(null);
     const [failureReason, setFailureReason] = useState("");
     const [customReason, setCustomReason] = useState("");
+    const [failureReasons, setFailureReasons] = useState({}); // Lưu lý do thất bại cho từng delivery
     // ...existing code...
 
     useEffect(() => {
@@ -135,6 +136,14 @@ function Delivery() {
                         }
                     });
                     setSelectedShipper(initialSelected);
+                    
+                    // Load saved failure reasons from localStorage
+                    try {
+                        const savedReasons = JSON.parse(localStorage.getItem("deliveryFailureReasons") || "{}");
+                        setFailureReasons(savedReasons);
+                    } catch (e) {
+                        console.error("Failed to load failure reasons:", e);
+                    }
                 } else {
                     const text = await response.text();
                     setError("API returned HTML: " + text.substring(0, 100));
@@ -195,6 +204,21 @@ function Delivery() {
         
         const reason = failureReason === "other" ? customReason : failureReason;
         console.log(`Delivery failed for order ${selectedDelivery.order.id}: ${reason}`);
+        
+        // Lưu lý do thất bại vào state
+        setFailureReasons(prev => ({
+            ...prev,
+            [selectedDelivery.id]: reason
+        }));
+        
+        // Lưu vào localStorage để persist qua reload
+        try {
+            const savedReasons = JSON.parse(localStorage.getItem("deliveryFailureReasons") || "{}");
+            savedReasons[selectedDelivery.id] = reason;
+            localStorage.setItem("deliveryFailureReasons", JSON.stringify(savedReasons));
+        } catch (e) {
+            console.error("Failed to save failure reason:", e);
+        }
         
         // Update order status to Cancelled
         updateOrderStatus(selectedDelivery.order.id, "Cancelled");
