@@ -74,7 +74,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id", "name", "description", "slug", "image", "price", "category_id", "category_name", "discount_percent", "featured"
+            "id", "name", "description", "slug", "image", "price", "category_id", "category_name", "discount_percent", "featured", "quantity"
         ]
     
     def get_discount_percent(self, obj):

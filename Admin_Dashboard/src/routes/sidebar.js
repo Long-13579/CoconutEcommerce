@@ -21,19 +21,19 @@ export const menuByRole = {
 // getAllowedRoutes là hàm để lọc routes theo role đã lưu trong storage
 // localStorage là lưu trữ dữ liệu trong trình duyệt cho đến khi người dùng xóa
 // sessionStorage là lưu trữ dữ liệu trong trình duyệt cho đến khi người dùng đóng trình duyệt
-function getAllowedRoutes() {
-  const role =
-    (typeof localStorage !== 'undefined' && (localStorage.getItem('role') || localStorage.getItem('user_role'))) ||
-    (typeof sessionStorage !== 'undefined' && (sessionStorage.getItem('role') || sessionStorage.getItem('user_role'))) ||
-    '';
-  const allow = (menuByRole[role] || menuByRole['staff_support'] || []).reduce((set, name) => (set.add(name), set), new Set());
+// function getAllowedRoutes() {
+//   const role =
+//     (typeof localStorage !== 'undefined' && (localStorage.getItem('role') || localStorage.getItem('user_role'))) ||
+//     (typeof sessionStorage !== 'undefined' && (sessionStorage.getItem('role') || sessionStorage.getItem('user_role'))) ||
+//     '';
+//   const allow = (menuByRole[role] || menuByRole['staff_support'] || []).reduce((set, name) => (set.add(name), set), new Set());
 
-  const filterTree = (items) => items
-    .filter(item => allow.has(item.name))
-    .map(item => item.routes ? { ...item, routes: filterTree(item.routes) } : item);
+//   const filterTree = (items) => items
+//     .filter(item => allow.has(item.name))
+//     .map(item => item.routes ? { ...item, routes: filterTree(item.routes) } : item);
 
-  return filterTree(baseRoutes);
-}
+//   return filterTree(baseRoutes);
+// }
 
 const baseRoutes = [
   {
@@ -107,6 +107,6 @@ const baseRoutes = [
   },
 ];
 
-const routes = getAllowedRoutes();
+const routes = baseRoutes;
 
 export default routes;
