@@ -366,7 +366,27 @@ function Delivery() {
                                                         <span className="text-green-700 font-medium">Order Delivered Successfully</span>
                                                     )}
                                                     {delivery.order && delivery.order.status === "Cancelled" && (
-                                                        <span className="text-red-600 font-medium">Order Delivery Failed</span>
+                                                        <div className="text-red-600 font-medium">
+                                                        <div>Order Delivery Failed</div>
+                                                        {(() => {
+                                                            // Lấy lý do từ state hoặc localStorage
+                                                            const reason = failureReasons[delivery.id] || 
+                                                                (() => {
+                                                                    try {
+                                                                        const saved = JSON.parse(localStorage.getItem("deliveryFailureReasons") || "{}");
+                                                                        return saved[delivery.id];
+                                                                    } catch (e) {
+                                                                        return null;
+                                                                    }
+                                                                })();
+                                                            
+                                                            return reason ? (
+                                                                <div className="text-sm text-gray-600 mt-1">
+                                                                    <strong>Lý do:</strong> {reason}
+                                                                </div>
+                                                            ) : null;
+                                                        })()}
+                                                    </div>
                                                     )}
                                                 </td>
                                             </tr>
